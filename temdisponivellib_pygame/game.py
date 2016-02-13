@@ -1,5 +1,4 @@
-import pygame
-
+from pygame import *
 from gameobject import IResource
 from temdisponivellib_pygame.time import Time
 
@@ -19,7 +18,7 @@ class Game(object, IResource):
                  full_screen=False,
                  surface_flags=0,
                  title="Game",
-                 frame_cap=30,
+                 frame_cap=100,
                  mouse_visible=False):
         if Game.instance is None:
             Game.instance = self
@@ -119,13 +118,22 @@ class Game(object, IResource):
                 continue
             # just for safety
             if self._current_scene is not None:
-                self._current_scene.update()
-                self.surface.fill((0, 0, 0))
-                self._current_scene.draw()
-                pygame.display.flip()
+                try:
+                    self._current_scene.update()
+                    self.surface.fill(self.scene.background_color)
+                    self._current_scene.draw()
+                    pygame.display.flip()
+                except error, message:
+                    print error, message
             if self._next_scene is not None:
-                self._current_scene.unload()
-                self._next_scene.load()
+                try:
+                    self._current_scene.unload()
+                except error, message:
+                    print error, message
+                try:
+                    self._next_scene.load()
+                except error, message:
+                    print error, message
                 self._current_scene = self._next_scene
                 self._next_scene = None
 
