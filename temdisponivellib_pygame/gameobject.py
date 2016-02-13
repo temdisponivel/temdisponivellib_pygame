@@ -51,14 +51,51 @@ class IUpdatable(object):
         self._is_updating = is_updating
 
 
-class IDrawable(object):
+class IDrawer(object):
+
     """
-    Class that defines something that can be draw (or draw something else) in screen.
+    Class that defines something that perform drawings into the surface.
     """
+
     def __init__(self):
         self._is_drawing = True
 
     def draw(self):
+        """
+        This method is called when this object should draw whatever if supposed to.
+        """
+        pass
+
+    @property
+    def is_drawing(self):
+        """
+        Whether or not this game object should be drawn
+        :return:
+        """
+        return self._is_drawing
+
+    @property.setter
+    def is_drawing(self, is_drawing):
+        """
+        Set if this game object should be drawn
+        :return:
+        """
+        self._is_drawing = is_drawing
+
+
+class IDrawable(object):
+    """
+    Class that defined something that will be drawn into a surface.
+    """
+
+    def __init__(self):
+        self._is_drawing = True
+
+    def get_drawable(self):
+        """
+        This method must return something that can be drawn into a surface.
+        :return: Something to drawn into a surface.
+        """
         pass
 
     @property
@@ -96,14 +133,15 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
 
     def __init__(self):
         super(IUpdatable, self).__init__()
-        super(IDrawable, self).__init__()
+        super(IDrawer, self).__init__()
         super(IResource, self).__init__()
         self._id = GameObject._id + 1
         self._tag = self.__class__.__name__
         self._name = "GameObject " + self._tag + " " + self._id
         GameObject._id += 1
         self._components = {}
-        self._components_by_flag = {}
+        self.__drawable_component = None
+        self.is_drawing = False
         self._loaded = False
         self.load()
 
@@ -124,12 +162,14 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         return self._loaded
 
     def update(self):
-        for component in self._components_by_flag[Component.TO_UPDATE]:
+        if not self.is_updating:
+            pass
+        for component in self._components:
             component.update()
 
-    def draw(self):
-        for component in self._components_by_flag[Component.TO_DRAW]:
-            component.draw()
+    def get_drawable(self):
+        if self.is_drawing and self._drawable_component.is_drawing:
+            return self._drawable_component.get_drawable
 
     def load(self):
         GameObject._loaded_game_object_by_tag.setdefault(self.tag, [])
@@ -174,8 +214,10 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         else:
             self._components.setdefault(component.__class__, [])
             self._components[component.__class__].insert(component)
-        self._components_by_flag.setdefault(component.flags, [])
-        self._components_by_flag[component.flags].insert(component)
+
+        if isinstance(component, IDrawable):
+            self._drawable_component = component
+
         component.game_object = self
         component.load()
 
@@ -186,13 +228,31 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         This function sets the 'game_object' property of the component to None. It also call the 'unload' method of
         the component
         """
+        if component.__class__ not in self._components:
+            pass
+
         if type(self._components[component.__class__]) is list:
             self._components[component.__class__].remove(component)
         else:
             del self._components[component.__class__]
-        self._components_by_flag[component.flags].remove(component)
+
+        if component == self._drawable_component:
+            self._drawable_component = None
+
         component.game_object(None)
         component.unload()
+
+    @property
+    def _drawable_component(self):
+        return self.__drawable_component
+
+    @property.setter
+    def _drawable_component(self, component):
+        if component is None:
+            self.is_drawing = False
+        else:
+            self.is_drawing = True
+        self.__drawable_component = component
 
     def get_component(self, key):
         """
@@ -249,12 +309,11 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         return GameObject._loaded_game_object_by_tag[game_object_id]
 
 
-class Component(object, IResource):
-    """
-    Represents a component that can be attached to a game object and be part of its lifecycle
-    """
+class Component(object, IUpdatable, IResource):
 
-    TO_UPDATE, TO_DRAW = 1, 2
+    """
+    Represents a component that can be attached to a game object and be part of its lifecycle.
+    """
 
     def __init__(self):
         self._game_object = None
@@ -273,18 +332,38 @@ class Component(object, IResource):
     def unload(self):
         pass
 
-    @staticmethod
-    @property
-    def is_unique():
-        """
-        :return: If a game object can have more than one instance of this component.
-        """
-        return False
+    def update(self):
+        pass
 
-    @staticmethod
+    def add_component(self, component):
+        """
+        Just a shortcut for the 'game_object'.add_component
+        """
+        return self._game_object.remove_component(component)
+
+    def remove_component(self, component):
+        """
+        Just a shortcut for the 'game_object'.remove_component
+        """
+        return self._game_object.remove_component(component)
+
+    def get_component(self, key):
+        """
+        Just a shortcut for the 'game_object'.get_component
+        """
+        return self._game_object.get_component(key)
+
+    def get_components(self, key):
+        """
+        Just a shortcut for the 'game_object'.get_components
+        """
+        return self._game_object.get_components(key)
+
     @property
-    def flags():
+    def is_unique(self):
         """
-        :return: If should be draw or updated. Use | to sum to flags.
+        :return: If a game object can have more than one instance of this component. Note that a game object
+        can have only ONE drawable component attached to, so if this class inherits from IDrawable, make sure
+        that this method always return true.
         """
-        return Component.TO_DRAW | Component.TO_UPDATE
+        return True

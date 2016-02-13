@@ -1,10 +1,10 @@
 from pygame import Rect
 from game import Game
-from gameobject import IDrawable
+from gameobject import IDrawer
 from pygame import error as err
 
 
-class Camera(object, Rect, IDrawable):
+class Camera(object, Rect, IDrawer):
     """
     Class that represents a camera in game.
     A camera is used to draw just a portion of a level or object. A scene can have multiple Cameras.
@@ -15,7 +15,7 @@ class Camera(object, Rect, IDrawable):
 
     def __init__(self, position=(0, 0), size=(Game.instance.screen_size.width, Game.instance.screen_size.height)):
         super(Rect, self).__init__(position, size)
-        super(IDrawable, self).__init__()
+        super(IDrawer, self).__init__()
 
     def in_sight(self, game_object):
         """

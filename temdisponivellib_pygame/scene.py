@@ -1,9 +1,9 @@
 from gameobject import GameObject
-from gameobject import IDrawable
+from gameobject import IDrawer
 from pygame import error as err
 
 
-class Scene(object, GameObject, IDrawable):
+class Scene(object, GameObject, IDrawer):
     """
     Class that represents a scene in the game.
     It is a game object because it behaves like one, so...
