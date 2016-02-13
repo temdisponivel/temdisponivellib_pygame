@@ -31,7 +31,6 @@ class Camera(object, Component, Rect, IDrawer):
     def draw(self):
         """
         Draws a game object (only when 'in_camera' is true) using this camera.
-        :param source: Game object to draw.
         """
         game_objects_drawable = Game.instance.scene.get_drawables
         for game_object in game_objects_drawable:
