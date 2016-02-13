@@ -1,10 +1,11 @@
 from pygame import Rect
 from game import Game
 from gameobject import IDrawer
+from gameobject import Component
 from pygame import error as err
 
 
-class Camera(object, Rect, IDrawer):
+class Camera(object, Component, Rect, IDrawer):
     """
     Class that represents a camera in game.
     A camera is used to draw just a portion of a level or object. A scene can have multiple Cameras.
@@ -30,10 +31,13 @@ class Camera(object, Rect, IDrawer):
         Draws a game object (only when 'in_camera' is true) using this camera.
         :param source: Game object to draw.
         """
-        game_objects = Game.instance.scene.get_objects_area(self)
-        for game_object in game_objects:
+
+        game_objects_area = Game.instance.scene.get_objects_area(self)
+        game_objects_drawable = Game.instance.scene.get_drawables
+
+        for game_object_a, game_object_d in zip(game_objects_area, game_objects_drawable):
             try:
-                self.draw_game_object(game_object, False)
+                self.draw_game_object(game_object_d, False)
             except err, message:
                 print err, message
                 raise err
@@ -44,6 +48,5 @@ class Camera(object, Rect, IDrawer):
         :param game_object: Game object to be draw.
         :param validate_in_camera: If true, only draws the object if 'in_sight' is True.
         """
-        if validate_in_camera and self.in_sight(game_object) \
-                and game_object.is_drawing and game_object.image is not None:
-            Game.instance.surface.blit(game_object.image, game_object.rect, game_object.rect.clip(self))
+        if validate_in_camera and self.in_sight(game_object) and game_object.is_drawing:
+            Game.instance.surface.blit(game_object.get_drawable, game_object.rect, game_object.rect.clip(self))

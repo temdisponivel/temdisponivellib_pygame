@@ -1,5 +1,7 @@
 from gameobject import GameObject
 from gameobject import IDrawer
+from gameobject import IDrawable
+from gameobject import IResource
 from pygame import error as err
 
 
@@ -12,6 +14,8 @@ class Scene(object, GameObject, IDrawer):
     def __init__(self, background_color, *game_objects):
         super(GameObject, self).__init__()
         self._game_objects = {}
+        self._game_objects_drawable = {}
+        self._game_objects_drawer = []
         self._cameras = {}
         self._areas = {}
         self._included = []
@@ -24,12 +28,12 @@ class Scene(object, GameObject, IDrawer):
         if not self.is_updating:
             pass
         index = 0
-        for game_object in self._game_objects.values():
+        game_objects = self._layers.values()
+        for game_object in game_objects:
             if not game_object.is_updating:
                 continue
             try:
                 game_object.update()
-                self._place_game_object_area(game_object)
                 index += 1
             except err, message:
                 print err, message
@@ -37,20 +41,37 @@ class Scene(object, GameObject, IDrawer):
 
         for game_object in self._included:
             self._game_objects[game_object.id] = game_object
-        for game_object in self._included:
-            if game_object.id in self._game_objects:
-                del self._game_objects[game_object.id]
+            if game_object.get_component(IDrawable) is not None:
+                comp = game_object.get_component(IDrawable)
+                self._game_objects_drawer[comp.layer, comp.order_in_layer, game_object.id] = game_object
+            if game_object.get_component(IDrawer) is not None:
+                self._game_objects_drawer.insert(game_object)
+
+        for game_object in self._removed:
+            if game_object.id not in self._game_objects:
+                pass
+
+            del self._game_objects[game_object.id]
+
+            comp = game_object.get_component(IDrawable)
+            if game_object.get_component(IDrawable) is not None:
+                del self._game_objects_drawable[comp.layer, comp.order_in_layer, game_object.id]
+
+            if game_object.get_component(IDrawer) is not None:
+                self._game_objects_drawer.remove(game_object)
+
+            game_object.finish()
         self._included.clear()
         self._removed.clear()
 
     def draw(self):
         if not self.is_drawing:
             pass
-        for camera in self._cameras.values():
-            if not camera.is_drawing:
+        for drawer in self._game_objects_drawer:
+            if not drawer.is_drawing:
                 continue
             try:
-                camera.draw()
+                drawer.draw()
             except err, message:
                 print err, message
                 raise err
@@ -75,9 +96,45 @@ class Scene(object, GameObject, IDrawer):
         """
         self._removed.insert(game_object)
 
+    @property
+    def get_drawables(self):
+        """
+        :return: A list with all drawables in this scene.
+        """
+        return sorted(self._game_objects_drawable).values()
+
+    def get_objects_area(self, rect):
+        """
+        Return a list with all game object within (or intersecting) the rect
+        :param rect: Rect to validate game object in collision.
+        :return: List with all matches.
+        """
+        pass
+
     def _place_game_object_area(self, game_object):
         """
         Update the area of which a game object is placed
         :param game_object: Game object to update the area
         """
         pass
+
+    def change_layer_or_order(self, game_object, last_layer, last_order):
+        """
+        Callback for when a game_object change layer or order. The game object must have the values already updated
+        :param game_object: Game object that change
+        :param last_layer: Last layer
+        :param last_order: Last order
+        """
+        del self._game_objects_drawable[last_layer, last_order]
+        if game_object.get_component(IDrawable) is not None:
+                comp = game_object.get_component(IDrawable)
+                self._game_objects_drawable[comp.layer, comp.order_in_layer] = game_object
+
+    def game_object_moved(self, game_object, last_position):
+        """
+        Callback for when a game object move. Game object must have the values already updated.
+        :param game_object: Game object that move.
+        :param last_position: Last position of the object.
+        :return:
+        """
+        self._place_game_object_area(game_object)

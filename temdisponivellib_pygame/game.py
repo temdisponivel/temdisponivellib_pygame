@@ -1,9 +1,9 @@
 from pygame import *
-from gameobject import IResource
+from gameobject import IUpdatable
 from temdisponivellib_pygame.time import Time
 
 
-class Game(object, IResource):
+class Game(object, IUpdatable):
 
     """
     A class that represents a game.
@@ -24,7 +24,7 @@ class Game(object, IResource):
             Game.instance = self
         else:
             pass
-        super(IResource, self).__init__()
+        super(IUpdatable, self).__init__()
         self._surface = None
         self._screen_size = screen_size
         self._title = title
@@ -95,13 +95,13 @@ class Game(object, IResource):
             attributes = pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
         pygame.display.set_mode(self.screen_size, attributes)
 
-    def load(self):
+    def start(self):
         pygame.init()
         self._update_surface_mode()
 
-    def unload(self):
+    def finish(self):
         if self._current_scene is not None:
-            self._current_scene.unload()
+            self._current_scene.finish()
         pygame.quit()
 
     def play(self):
@@ -127,11 +127,11 @@ class Game(object, IResource):
                     print error, message
             if self._next_scene is not None:
                 try:
-                    self._current_scene.unload()
+                    self._current_scene.finish()
                 except error, message:
                     print error, message
                 try:
-                    self._next_scene.load()
+                    self._next_scene.start()
                 except error, message:
                     print error, message
                 self._current_scene = self._next_scene
@@ -139,12 +139,12 @@ class Game(object, IResource):
 
     def quit(self):
         """
-        Close and unload the game
+        Close and finish the game
         :return: None
         """
         self._running = False
         self.pause(True)
-        self.unload()
+        self.finish()
 
     @property
     def pause(self):

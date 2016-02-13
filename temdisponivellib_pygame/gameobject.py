@@ -1,4 +1,4 @@
-from pygame import Rect
+from game import Game
 from pygame import error
 
 
@@ -30,7 +30,13 @@ class IUpdatable(object):
     def __init__(self):
         self._is_updating = True
 
+    def start(self):
+        pass
+
     def update(self):
+        pass
+
+    def finish(self):
         pass
 
     @property
@@ -83,13 +89,20 @@ class IDrawer(object):
         self._is_drawing = is_drawing
 
 
-class IDrawable(object):
+class IDrawable(object, IResource):
     """
     Class that defined something that will be drawn into a surface.
     """
 
+    _order_in_layer = 0
+
     def __init__(self):
+        super(IResource, self).__init__()
         self._is_drawing = True
+        self._layer = 0
+        self._order_in_layer = IDrawable._order_in_layer + 1
+        IDrawable._order_in_layer += 1
+
 
     def get_drawable(self):
         """
@@ -114,8 +127,28 @@ class IDrawable(object):
         """
         self._is_drawing = is_drawing
 
+    @property
+    def layer(self):
+        return self._layer
 
-class GameObject(object, IUpdatable, IDrawable, IResource):
+    @property.setter
+    def layer(self, layer):
+        last_layer = self._layer
+        self._layer = layer
+        Game.instance.scene.change_layer_or_order(self, last_layer, self.order_in_layer)
+
+    @property
+    def order_in_layer(self):
+        return self._order_in_layer
+
+    @property.setter
+    def order_in_layer(self, order):
+        last_order = self.order_in_layer
+        self._order_in_layer = order
+        Game.instance.scene.change_layer_or_order(self, self.layer, last_order)
+
+
+class GameObject(object, IUpdatable):
     """
     Class that represents a game object.
 
@@ -127,23 +160,18 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
     """
 
     _id = 0
-    _loaded_game_object_by_tag = {}
-    _loaded_game_object_by_id = {}
-    _loaded_game_object_by_name = {}
+    _started_game_object_by_tag = {}
+    _started_game_object_by_id = {}
+    _started_game_object_by_name = {}
 
-    def __init__(self):
+    def __init__(self, name="GameObject", tag="Tag"):
         super(IUpdatable, self).__init__()
-        super(IDrawer, self).__init__()
-        super(IResource, self).__init__()
         self._id = GameObject._id + 1
-        self._tag = self.__class__.__name__
-        self._name = "GameObject " + self._tag + " " + self._id
+        self._tag = tag
+        self._name = name
         GameObject._id += 1
         self._components = {}
-        self.__drawable_component = None
         self.is_drawing = False
-        self._loaded = False
-        self.load()
 
     @property
     def id(self):
@@ -157,10 +185,6 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
     def name(self):
         return self._name
 
-    @property
-    def loaded(self):
-        return self._loaded
-
     def update(self):
         if not self.is_updating:
             pass
@@ -171,30 +195,33 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         if self.is_drawing and self._drawable_component.is_drawing:
             return self._drawable_component.get_drawable
 
-    def load(self):
-        GameObject._loaded_game_object_by_tag.setdefault(self.tag, [])
-        GameObject._loaded_game_object_by_name.setdefault(self.name, [])
-        GameObject._loaded_game_object_by_tag[self.tag].insert(self)
-        GameObject._loaded_game_object_by_name[self.name].insert(self)
-        GameObject._loaded_game_object_by_id[self._id] = self
+    def start(self):
+        GameObject._started_game_object_by_tag.setdefault(self.tag, [])
+        GameObject._started_game_object_by_name.setdefault(self.name, [])
+        GameObject._started_game_object_by_tag[self.tag].insert(self)
+        GameObject._started_game_object_by_name[self.name].insert(self)
+        GameObject._started_game_object_by_id[self._id] = self
         for component in self._components.values():
-            component.load()
-        self.loaded = True
+            component.start()
 
-    def unload(self):
-        if self.tag in GameObject._loaded_game_object_by_tag:
-            if self in GameObject._loaded_game_object_by_tag:
-                GameObject._loaded_game_object_by_tag[self.tag].remove(self)
+    def finish(self):
+        if self.tag in GameObject._started_game_object_by_tag:
+            if self in GameObject._started_game_object_by_tag:
+                GameObject._started_game_object_by_tag[self.tag].remove(self)
 
-        if self.name in GameObject._loaded_game_object_by_name:
-            if self in GameObject._loaded_game_object_by_name:
-                GameObject._loaded_game_object_by_name[self.name].remove(self)
+        if self.name in GameObject._started_game_object_by_name:
+            if self in GameObject._started_game_object_by_name:
+                GameObject._started_game_object_by_name[self.name].remove(self)
 
-        if self.id in GameObject._loaded_game_object_by_id:
-            del GameObject._loaded_game_object_by_id[self.id]
+        if self.id in GameObject._started_game_object_by_id:
+            del GameObject._started_game_object_by_id[self.id]
 
         for component in self._components.values():
-            component.unload()
+            component.finish()
+
+    def destroy(self):
+        Game.instance.scene.remove_game_object(self)
+
 
     def add_component(self, component):
         """
@@ -204,28 +231,28 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         Raise a exception if the component class is marked as unique and this object already  has a instance
         of the same class
 
-        This method sets the 'game_object' instance of the component to this game object. It algo call the load
+        This method sets the 'game_object' instance of the component to this game object. It algo call the start
         method of the component.
         """
         if component.is_unique:
             if component.__class__ in self._components:
                 raise error("Try to add a duplicate component marked as unique.")
-            self._components[component.__class__] = component
+            if isinstance(component, IDrawable):
+                self._components[IDrawable] = component
+            else:
+                self._components[component.__class__] = component
         else:
             self._components.setdefault(component.__class__, [])
             self._components[component.__class__].insert(component)
 
-        if isinstance(component, IDrawable):
-            self._drawable_component = component
-
         component.game_object = self
-        component.load()
+        component.start()
 
     def remove_component(self, component):
         """
         Remove a component from this game object. From now on, this component won't be update or draw (or both)
         within the lifecycle of this game object
-        This function sets the 'game_object' property of the component to None. It also call the 'unload' method of
+        This function sets the 'game_object' property of the component to None. It also call the 'finish' method of
         the component
         """
         if component.__class__ not in self._components:
@@ -234,25 +261,14 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         if type(self._components[component.__class__]) is list:
             self._components[component.__class__].remove(component)
         else:
-            del self._components[component.__class__]
+            if isinstance(IDrawable):
+                self._components[IDrawable] = None
+            else:
+                del self._components[component.__class__]
 
-        if component == self._drawable_component:
-            self._drawable_component = None
 
         component.game_object(None)
-        component.unload()
-
-    @property
-    def _drawable_component(self):
-        return self.__drawable_component
-
-    @property.setter
-    def _drawable_component(self, component):
-        if component is None:
-            self.is_drawing = False
-        else:
-            self.is_drawing = True
-        self.__drawable_component = component
+        component.finish()
 
     def get_component(self, key):
         """
@@ -281,22 +297,22 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
     @staticmethod
     def get_game_object_by_name(name):
         """
-        Return a list of all loaded (that wasn't unloaded yet) that have a given name
+        Return a list of all started (that wasn't finished yet) that have a given name
         If no game object has this name, it return None
         """
-        if name not in GameObject._loaded_game_object_by_name:
+        if name not in GameObject._started_game_object_by_name:
             return None
-        return GameObject._loaded_game_object_by_name[name]
+        return GameObject._started_game_object_by_name[name]
 
     @staticmethod
     def get_game_object_by_tag(tag):
         """
-        Return a list of all loaded (that wasn't unloaded yet) that have a given tag
+        Return a list of all started (that wasn't finished yet) that have a given tag
         If no game object has this tag, it return None
         """
-        if tag not in GameObject._loaded_game_object_by_tag:
+        if tag not in GameObject._started_game_object_by_tag:
             return None
-        return GameObject._loaded_game_object_by_tag[tag]
+        return GameObject._started_game_object_by_tag[tag]
 
     @staticmethod
     def get_game_object_by_id(game_object_id):
@@ -304,18 +320,24 @@ class GameObject(object, IUpdatable, IDrawable, IResource):
         Return a game object that has a given id
         If no game object has this tag, it return None
         """
-        if game_object_id not in GameObject._loaded_game_object_by_id:
+        if game_object_id not in GameObject._started_game_object_by_id:
             return None
-        return GameObject._loaded_game_object_by_tag[game_object_id]
+        return GameObject._started_game_object_by_tag[game_object_id]
+
+    @IDrawable.is_drawing.getter
+    def is_drawing(self):
+        return super(self, IDrawable).is_drawing and self.get_component(IDrawable) is not None and \
+            self.get_component(IDrawable).is_drawing
 
 
-class Component(object, IUpdatable, IResource):
+class Component(object, IUpdatable):
 
     """
     Represents a component that can be attached to a game object and be part of its lifecycle.
     """
 
     def __init__(self):
+        super(IUpdatable, self)._init__()
         self._game_object = None
 
     @property
@@ -325,15 +347,6 @@ class Component(object, IUpdatable, IResource):
     @property.setter
     def game_object(self, game_object):
         self._game_object = game_object
-
-    def load(self):
-        pass
-
-    def unload(self):
-        pass
-
-    def update(self):
-        pass
 
     def add_component(self, component):
         """
