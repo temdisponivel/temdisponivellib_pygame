@@ -1,6 +1,6 @@
 from game import Game
 from pygame import error
-
+from builtin_components.transform import Transform
 
 class IResource(object):
     """
@@ -103,10 +103,10 @@ class IDrawable(object, IResource):
         self._order_in_layer = IDrawable._order_in_layer + 1
         IDrawable._order_in_layer += 1
 
-
     def get_drawable(self):
         """
-        This method must return something that can be drawn into a surface.
+        This method must return something that can be drawn into a surface. This object must have a 'get_rect'
+        method for the rect representing the area of it.
         :return: Something to drawn into a surface.
         """
         pass
@@ -171,7 +171,11 @@ class GameObject(object, IUpdatable):
         self._name = name
         GameObject._id += 1
         self._components = {}
+        self._components_remove = []
+        self._components_add = []
         self.is_drawing = False
+        self._started = False
+        self.add_component(Transform())
 
     @property
     def id(self):
@@ -185,11 +189,20 @@ class GameObject(object, IUpdatable):
     def name(self):
         return self._name
 
+    @property
+    def started(self):
+        return self._started
+
+    @property
+    def transform(self):
+        return self.get_component(Transform)
+
     def update(self):
         if not self.is_updating:
             pass
         for component in self._components:
             component.update()
+        self._update_component_list()
 
     def get_drawable(self):
         if self.is_drawing and self._drawable_component.is_drawing:
@@ -201,8 +214,8 @@ class GameObject(object, IUpdatable):
         GameObject._started_game_object_by_tag[self.tag].insert(self)
         GameObject._started_game_object_by_name[self.name].insert(self)
         GameObject._started_game_object_by_id[self._id] = self
-        for component in self._components.values():
-            component.start()
+        self._update_component_list()
+        self._started = True
 
     def finish(self):
         if self.tag in GameObject._started_game_object_by_tag:
@@ -217,11 +230,20 @@ class GameObject(object, IUpdatable):
             del GameObject._started_game_object_by_id[self.id]
 
         for component in self._components.values():
-            component.finish()
+            self.remove_component(component)
 
     def destroy(self):
         Game.instance.scene.remove_game_object(self)
 
+    def _update_component_list(self):
+        for component in self._components_remove:
+            self._remove_component(component)
+
+        for component in self._components_add:
+            self._add_component(component)
+
+        self._components_add.cler()
+        self._components_remove.clear()
 
     def add_component(self, component):
         """
@@ -234,6 +256,18 @@ class GameObject(object, IUpdatable):
         This method sets the 'game_object' instance of the component to this game object. It algo call the start
         method of the component.
         """
+        self._components_add.insert(component)
+
+    def remove_component(self, component):
+        """
+        Remove a component from this game object. From now on, this component won't be update or draw (or both)
+        within the lifecycle of this game object
+        This function sets the 'game_object' property of the component to None. It also call the 'finish' method of
+        the component
+        """
+        self._components_remove.insert(component)
+
+    def _add_component(self, component):
         if component.is_unique:
             if component.__class__ in self._components:
                 raise error("Try to add a duplicate component marked as unique.")
@@ -243,29 +277,36 @@ class GameObject(object, IUpdatable):
                 self._components[component.__class__] = component
         else:
             self._components.setdefault(component.__class__, [])
-            self._components[component.__class__].insert(component)
+            if component not in self._components[component.__class__]:
+                self._components[component.__class__].insert(component)
+
+        if isinstance(component, IResource):
+            component.load()
+
+        if self.started:
+            Game.instance.scene.game_object_add_component(self, component)
 
         component.game_object = self
         component.start()
 
-    def remove_component(self, component):
-        """
-        Remove a component from this game object. From now on, this component won't be update or draw (or both)
-        within the lifecycle of this game object
-        This function sets the 'game_object' property of the component to None. It also call the 'finish' method of
-        the component
-        """
+    def _remove_component(self, component):
         if component.__class__ not in self._components:
             pass
 
         if type(self._components[component.__class__]) is list:
-            self._components[component.__class__].remove(component)
+            if component in self._components[component.__class__]:
+                self._components[component.__class__].remove(component)
         else:
             if isinstance(IDrawable):
                 self._components[IDrawable] = None
             else:
                 del self._components[component.__class__]
 
+        if isinstance(component, IResource):
+            component.unload()
+
+        if self.started:
+            Game.instance.scene.game_object_remove_component(self, component)
 
         component.game_object(None)
         component.finish()
@@ -347,6 +388,10 @@ class Component(object, IUpdatable):
     @property.setter
     def game_object(self, game_object):
         self._game_object = game_object
+
+    @property
+    def transform(self):
+        return self.get_component(Transform)
 
     def add_component(self, component):
         """

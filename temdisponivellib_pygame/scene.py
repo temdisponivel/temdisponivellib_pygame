@@ -39,30 +39,7 @@ class Scene(object, GameObject, IDrawer):
                 print err, message
                 raise err
 
-        for game_object in self._included:
-            self._game_objects[game_object.id] = game_object
-            if game_object.get_component(IDrawable) is not None:
-                comp = game_object.get_component(IDrawable)
-                self._game_objects_drawer[comp.layer, comp.order_in_layer, game_object.id] = game_object
-            if game_object.get_component(IDrawer) is not None:
-                self._game_objects_drawer.insert(game_object)
-
-        for game_object in self._removed:
-            if game_object.id not in self._game_objects:
-                pass
-
-            del self._game_objects[game_object.id]
-
-            comp = game_object.get_component(IDrawable)
-            if game_object.get_component(IDrawable) is not None:
-                del self._game_objects_drawable[comp.layer, comp.order_in_layer, game_object.id]
-
-            if game_object.get_component(IDrawer) is not None:
-                self._game_objects_drawer.remove(game_object)
-
-            game_object.finish()
-        self._included.clear()
-        self._removed.clear()
+        self._update_list_game_object()
 
     def draw(self):
         if not self.is_drawing:
@@ -75,6 +52,37 @@ class Scene(object, GameObject, IDrawer):
             except err, message:
                 print err, message
                 raise err
+
+    def _update_list_game_object(self):
+        for game_object in self._included:
+            self._game_objects[game_object.id] = game_object
+            if game_object.get_component(IDrawable) is not None:
+                comp = game_object.get_component(IDrawable)
+                self._game_objects_drawable[comp.layer, comp.order_in_layer, game_object.id] = game_object
+            if game_object.get_component(IDrawer) is not None:
+                if game_object not in self._game_objects_drawer:
+                    self._game_objects_drawer.insert(game_object)
+            game_object.start()
+
+        for game_object in self._removed:
+            if game_object.id not in self._game_objects:
+                pass
+
+            del self._game_objects[game_object.id]
+
+            comp = game_object.get_component(IDrawable)
+            if game_object.get_component(IDrawable) is not None:
+                if (comp.layer, comp.order_in_layer, game_object.id) in self._game_objects_drawable:
+                    del self._game_objects_drawable[comp.layer, comp.order_in_layer, game_object.id]
+
+            if game_object.get_component(IDrawer) is not None:
+                if game_object in self._game_objects_drawer:
+                    self._game_objects_drawer.remove(game_object)
+
+            game_object.finish()
+
+        self._included.clear()
+        self._removed.clear()
 
     @property
     def game_objects(self):
@@ -103,21 +111,6 @@ class Scene(object, GameObject, IDrawer):
         """
         return sorted(self._game_objects_drawable).values()
 
-    def get_objects_area(self, rect):
-        """
-        Return a list with all game object within (or intersecting) the rect
-        :param rect: Rect to validate game object in collision.
-        :return: List with all matches.
-        """
-        pass
-
-    def _place_game_object_area(self, game_object):
-        """
-        Update the area of which a game object is placed
-        :param game_object: Game object to update the area
-        """
-        pass
-
     def change_layer_or_order(self, game_object, last_layer, last_order):
         """
         Callback for when a game_object change layer or order. The game object must have the values already updated
@@ -137,4 +130,56 @@ class Scene(object, GameObject, IDrawer):
         :param last_position: Last position of the object.
         :return:
         """
-        self._place_game_object_area(game_object)
+        self._replace_game_object_area(game_object, last_position)
+
+    def game_object_add_component(self, game_object, component):
+        if isinstance(component, IDrawable):
+            self._game_objects_drawable[component.layer, component.order_in_layer, game_object.id] = game_object
+        if isinstance(component, IDrawer):
+            if game_object not in self._game_objects_drawer:
+                self._game_objects_drawer.insert(game_object)
+
+    def game_object_remove_component(self, game_object, component):
+        if isinstance(component, IDrawable):
+            if (component.layer, component.order_in_layer, game_object.id) in self._game_objects_drawable:
+                del self._game_objects_drawable[component.layer, component.order_in_layer, game_object.id]
+        if isinstance(component, IDrawer):
+            if game_object in self._game_objects_drawer:
+                self._game_objects_drawer.remove(game_object)
+
+    #  Waiting to integrate with a physics engine to get object in area of collision
+    #
+    # def get_objects_area(self, rect):
+    #     """
+    #     Return a list with all game object within (or intersecting) the rect
+    #     :param rect: Rect to validate game object in collision.
+    #     :return: List with all matches.
+    #     """
+    #     if ((rect.x + rect.width) % 100, (rect.y + rect.height) % 100) not in self._areas:
+    #         return []
+    #     else:
+    #         return self._areas[(rect.x + rect.width) % 100, (rect.y + rect.height) % 100]
+    #
+    # def _place_game_object_area(self, game_object):
+    #     """
+    #     Update the area of which a game object is placed
+    #     :param game_object: Game object to update the area
+    #     """
+    #     self._areas.setdefault((game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
+    #                 (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100, [])
+    #
+    #     if game_object not in self._areas[(game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
+    #                                   (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100]:
+    #         self._areas[(game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
+    #                 (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100].insert(game_object)
+    #
+    # def _replace_game_object_area(self, game_object, last_position):
+    #     """
+    #     Update the area of which a game object is placed
+    #     :param game_object: Game object to update the area
+    #     """
+    #     if game_object in self._areas[(last_position.x + last_position.width) % 100,
+    #                                   (last_position.y + last_position.height) % 100]:
+    #         self._areas[(last_position.x + last_position.width) % 100,
+    #                     (last_position.y + last_position.height) % 100].remove(game_object)
+    #     self._place_game_object_area(game_object)
