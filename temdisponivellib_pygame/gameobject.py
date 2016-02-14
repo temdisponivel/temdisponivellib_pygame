@@ -175,6 +175,7 @@ class GameObject(object, IUpdatable):
         self._components_add = []
         self.is_drawing = False
         self._started = False
+        self._persistent = False
         self.add_component(Transform())
 
     @property
@@ -334,6 +335,20 @@ class GameObject(object, IUpdatable):
             return self._components[key]
         else:
             return [self._components[key]]
+
+    @property
+    def persistent(self):
+        """
+        Return whether this game object will be destroyed when whe scene finish.
+        """
+        return self._persistent
+
+    @property.setter
+    def persistent(self, persistent):
+        """
+        Defines whether this game object will be destroyed when whe scene finish.
+        """
+        self._persistent = persistent
 
     @staticmethod
     def get_game_object_by_name(name):

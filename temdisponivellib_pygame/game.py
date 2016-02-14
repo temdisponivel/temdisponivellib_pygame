@@ -1,6 +1,7 @@
 from pygame import *
 from gameobject import IUpdatable
 from temdisponivellib_pygame.time import Time
+from configuration import Configuration
 
 
 class Game(object, IUpdatable):
@@ -13,87 +14,18 @@ class Game(object, IUpdatable):
 
     instance = None
 
-    def __init__(self,
-                 screen_size=pygame.rect(640, 480),
-                 full_screen=False,
-                 surface_flags=0,
-                 title="Game",
-                 frame_cap=100,
-                 mouse_visible=False):
+    def __init__(self, configuration=Configuration):
         if Game.instance is None:
             Game.instance = self
         else:
             pass
         super(IUpdatable, self).__init__()
         self._surface = None
-        self._screen_size = screen_size
-        self._title = title
-        self._frame_cap = frame_cap
-        self._mouse_visible = mouse_visible
-        self._full_screen = full_screen
         self._running = False
-        self._paused = False
         self._events = {}
         self._current_scene = None
         self._next_scene = None
         self._time = Time()
-
-    @property
-    def title(self, title):
-        return self._title
-
-    @property.setter
-    def title(self, title):
-        self._title = title
-
-    @property
-    def screen_size(self):
-        return self._screen_size
-
-    @property.setter
-    def screen_size(self, size):
-        self._screen_size = size
-        self.surface = pygame.display.set_mode(self.screen_size)
-
-    @property
-    def surface(self):
-        return self._surface
-
-    @property.setter
-    def surface(self, surface):
-        self._surface = surface
-
-    @property
-    def mouse_visible(self):
-        return self._mouse_visible
-
-    @property.setter
-    def mouse_visible(self, mouse_visible):
-        self._mouse_visible = mouse_visible
-        pygame.mouse.set_visible(self.mouse_visible)
-
-    @property
-    def frame_cap(self):
-        return self._frame_cap
-
-    @property.setter
-    def frame_cap(self, frame_cap):
-        self._frame_cap = frame_cap
-
-    @property
-    def full_screen(self):
-        return self._full_screen
-
-    @property.setter
-    def full_screen(self, full_screen):
-        self._full_screen = full_screen
-        self._update_surface_mode()
-
-    def _update_surface_mode(self):
-        attributes = 0
-        if self.full_screen:
-            attributes = pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
-        pygame.display.set_mode(self.screen_size, attributes)
 
     def start(self):
         pygame.init()
@@ -114,8 +46,6 @@ class Game(object, IUpdatable):
         while self._running:
             self._time.update()
             self._handle_event()
-            if self._paused:
-                continue
             # just for safety
             if self._current_scene is not None:
                 try:
@@ -143,16 +73,7 @@ class Game(object, IUpdatable):
         :return: None
         """
         self._running = False
-        self.pause(True)
         self.finish()
-
-    @property
-    def pause(self):
-        return self._paused
-
-    @property.setter
-    def pause(self, pause):
-        self._paused = pause
 
     @property
     def scene(self):
@@ -165,6 +86,14 @@ class Game(object, IUpdatable):
     @property
     def events(self):
         return self._events
+
+    @property
+    def surface(self):
+        return self._surface
+
+    @property.setter
+    def surface(self, surface):
+        self._surface = surface
 
     def _handle_event(self):
         self._events.clear()

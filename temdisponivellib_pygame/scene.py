@@ -11,6 +11,8 @@ class Scene(object, GameObject, IDrawer):
     It is a game object because it behaves like one, so...
     """
 
+    _persistent_game_objects = []
+
     def __init__(self, background_color, *game_objects):
         super(GameObject, self).__init__()
         self._game_objects = {}
@@ -24,11 +26,17 @@ class Scene(object, GameObject, IDrawer):
         for game_object in game_objects:
             self.add_game_object(game_object)
 
+    def start(self):
+        for game_object in Scene._persistent_game_objects:
+            self.add_game_object(game_object)
+        Scene._persistent_game_objects.clear()
+
     def update(self):
         if not self.is_updating:
             pass
         index = 0
         game_objects = self._layers.values()
+        self._update_list_game_object()
         for game_object in game_objects:
             if not game_object.is_updating:
                 continue
@@ -39,7 +47,11 @@ class Scene(object, GameObject, IDrawer):
                 print err, message
                 raise err
 
-        self._update_list_game_object()
+    def finish(self):
+        for game_object in self._game_objects:
+            if game_object.persistent:
+                Scene._persistent_game_objects.insert(game_object)
+            self.remove_game_object(game_object)
 
     def draw(self):
         if not self.is_drawing:
