@@ -1,0 +1,1 @@
+_callback_function = ["collision_enter", "collision_stay", "collision_exit"]

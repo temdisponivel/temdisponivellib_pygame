@@ -2,6 +2,7 @@ from pygame import *
 from gameobject import IUpdatable
 from temdisponivellib_pygame.time import Time
 from configuration import Configuration
+from physics import Physics
 
 
 class Game(object, IUpdatable):
@@ -26,6 +27,7 @@ class Game(object, IUpdatable):
         self._current_scene = None
         self._next_scene = None
         self._time = Time()
+        self._frame_count = 0
 
     def start(self):
         pygame.init()
@@ -66,6 +68,7 @@ class Game(object, IUpdatable):
                     print error, message
                 self._current_scene = self._next_scene
                 self._next_scene = None
+            self._frame_count += 1
 
     def quit(self):
         """
@@ -94,6 +97,10 @@ class Game(object, IUpdatable):
     @property.setter
     def surface(self, surface):
         self._surface = surface
+
+    @property
+    def frame_count(self):
+        return self._frame_count
 
     def _handle_event(self):
         self._events.clear()

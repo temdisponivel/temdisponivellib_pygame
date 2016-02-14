@@ -14,7 +14,8 @@ class Configuration(object):
                  surface_flags=0,
                  title="Game",
                  frame_cap=100,
-                 mouse_visible=False):
+                 mouse_visible=False,
+                 collision_check_rate = 3):
         if Configuration.intance is None:
             Configuration.instance = self
         else:
@@ -26,6 +27,7 @@ class Configuration(object):
         self._mouse_visible = mouse_visible
         self._full_screen = full_screen
         self._surface_flags = surface_flags
+        self._collision_check_rate = 3
 
     @property
     def title(self, title):
@@ -90,6 +92,14 @@ class Configuration(object):
     def surface_flags(self, flags):
         self._surface_flags = flags
         self._update_surface_mode()
+
+    @property
+    def collision_check_rate(self):
+        return self._collision_check_rate
+
+    @property.setter
+    def collision_check_rate(self, rate):
+        self._collision_check_rate = rate
 
     @property
     def length_world_area(self):

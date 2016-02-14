@@ -1,6 +1,7 @@
 from game import Game
 from pygame import error
 from builtin_components.transform import Transform
+from temdisponivellib_pygame import callback_functions
 
 class IResource(object):
     """
@@ -27,6 +28,7 @@ class IUpdatable(object):
     """
     Class that defines something that will be updated in game.
     """
+
     def __init__(self):
         self._is_updating = True
 
@@ -58,7 +60,6 @@ class IUpdatable(object):
 
 
 class IDrawer(object):
-
     """
     Class that defines something that perform drawings into the surface.
     """
@@ -383,7 +384,7 @@ class GameObject(object, IUpdatable):
     @IDrawable.is_drawing.getter
     def is_drawing(self):
         return super(self, IDrawable).is_drawing and self.get_component(IDrawable) is not None and \
-            self.get_component(IDrawable).is_drawing
+               self.get_component(IDrawable).is_drawing
 
 
 class Component(object, IUpdatable):
@@ -392,9 +393,20 @@ class Component(object, IUpdatable):
     Represents a component that can be attached to a game object and be part of its lifecycle.
     """
 
+    _class_by_callback_function = {}
+    _validated_classes = []
+
     def __init__(self):
         super(IUpdatable, self)._init__()
         self._game_object = None
+        if self.__class__ not in Component._validated_classes:
+            Component._validated_classes.insert(self.__class__)
+            for callback in callback_functions:
+                if not hasattr(self, callback):
+                    continue
+                Component._class_by_callback_function.setdefault(callback, [])
+                Component._class_by_callback_function[callback].insert(self.__class__)
+
 
     @property
     def game_object(self):
@@ -440,3 +452,10 @@ class Component(object, IUpdatable):
         that this method always return true.
         """
         return True
+
+    @property
+    def get_class_by_callback(self, callback_name):
+        if callback_name in Component._class_by_callback_function:
+            return []
+        else:
+            return Component._class_by_callback_function[callback_name]
