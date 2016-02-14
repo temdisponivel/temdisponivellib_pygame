@@ -8,7 +8,6 @@ from gameobject import IDrawable
 from game import Game
 from configuration import Configuration
 from component import Component
-from pygame.surface import Surface
 from pygame import draw
 
 
@@ -18,13 +17,13 @@ class Physics(IUpdatable, IDrawable):
     Class that handles some physics functions.
     """
 
-    instance = None
+    _instance = None
 
     def __init__(self):
         super(IUpdatable, self).__init__()
         super(IDrawable, self).__init__()
-        if Physics.instance is None:
-            Physics.instance = self
+        if Physics._instance is None:
+            Physics._instance = self
         else:
             pass
         self._draw_colliders = False
@@ -32,7 +31,7 @@ class Physics(IUpdatable, IDrawable):
         self._debug_color = (1, 0, 0)
 
     def update(self):
-        if Game.instance.frame_count % Configuration.instance.collision_check_rate == 0:
+        if Game.instance().frame_count % Configuration.instance().collision_check_rate == 0:
             self.check_collision()
 
     def draw(self):
@@ -41,9 +40,9 @@ class Physics(IUpdatable, IDrawable):
         colliders = Collider.get_colliders()
         for collider in colliders:
             if collider.collider_type == Collider.BOX:
-                draw.rect(Game.instance.surface, self._debug_color, collider.as_rect, 5)
+                draw.rect(Game.instance().surface, self._debug_color, collider.as_rect, 5)
             else:
-                draw.circle(Game.instance.surface, self._debug_color, (collider.x, collider.y), collider.radius, 5)
+                draw.circle(Game.instance().surface, self._debug_color, (collider.x, collider.y), collider.radius, 5)
 
     def check_collision(self):
         """
@@ -102,8 +101,8 @@ class Physics(IUpdatable, IDrawable):
         return self._draw_colliders
 
     @draw_colliders.setter
-    def draw_colliders(self, draw):
-        self._draw_colliders = draw
+    def draw_colliders(self, draw_colliders):
+        self._draw_colliders = draw_colliders
 
     @property
     def debug_color(self):
@@ -120,3 +119,9 @@ class Physics(IUpdatable, IDrawable):
         all active collisions
         """
         return self._active_collisions
+
+    @staticmethod
+    def instance():
+        if Physics._instance is None:
+            Physics._instance = Game()
+        return Physics._instance

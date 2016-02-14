@@ -1,8 +1,9 @@
 from pygame import Rect
-from temdisponivellib_pygame.game import Game
-from temdisponivellib_pygame.contracts import IDrawer
-from temdisponivellib_pygame.contracts import IDrawable
-from temdisponivellib_pygame.component import Component
+from temdisponivellib.game import Game
+from temdisponivellib.configuration import Configuration
+from temdisponivellib.contracts import IDrawer
+from temdisponivellib.contracts import IDrawable
+from temdisponivellib.component import Component
 
 
 class Camera(Component, IDrawer):
@@ -40,7 +41,7 @@ class Camera(Component, IDrawer):
         """
         Draws a game object (only when 'in_camera' is true) using this camera.
         """
-        game_objects_drawable = Game.instance.scene.get_drawables
+        game_objects_drawable = Game.instance().scene.get_drawables
         for game_object in game_objects_drawable:
             self.draw_game_object(game_object, True)
 
@@ -52,9 +53,9 @@ class Camera(Component, IDrawer):
         """
         if not validate_in_camera and self.in_sight(game_object) and game_object.get_component(IDrawable).is_drawing:
             pass
-        Game.instance.surface.blit(game_object.get_component(IDrawable).drawable,
-                                   game_object.get_component(IDrawable).get_rect,
-                                   game_object.get_component(IDrawable).get_rect.clip(self._rect))
+        Game.instance().surface.blit(game_object.get_component(IDrawable).drawable,
+                                     game_object.get_component(IDrawable).get_rect,
+                                     game_object.get_component(IDrawable).get_rect.clip(self._rect))
 
     @property
     def size(self):
@@ -67,5 +68,5 @@ class Camera(Component, IDrawer):
     def full_surface(self):
         self.transform.x = 0
         self.transform.y = 0
-        self.transform.width = Game.instance.screen_size.width
-        self.transform.height = Game.instance.screen_size.height
+        self.transform.width = Configuration.instance().screen_size.width
+        self.transform.height = Configuration.instance().screen_size.height

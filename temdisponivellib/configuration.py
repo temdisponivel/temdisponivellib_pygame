@@ -1,5 +1,6 @@
 from pygame import Rect
 import pygame
+import game
 
 
 class Configuration(object):
@@ -7,7 +8,7 @@ class Configuration(object):
     Class that contains useful configuration of the game.
     """
 
-    instance = None
+    _instance = None
 
     def __init__(self,
                  screen_size=Rect(640, 480, 0, 0),
@@ -17,8 +18,8 @@ class Configuration(object):
                  frame_cap=100,
                  mouse_visible=False,
                  collision_check_rate=3):
-        if Configuration.instance is None:
-            Configuration.instance = self
+        if Configuration._instance is None:
+            Configuration._instance = self
         else:
             pass
         self._length_world_area = 100
@@ -29,6 +30,7 @@ class Configuration(object):
         self._full_screen = full_screen
         self._surface_flags = surface_flags
         self._collision_check_rate = collision_check_rate
+        self._frame_cap = 100
 
     @property
     def title(self):
@@ -37,6 +39,7 @@ class Configuration(object):
     @title.setter
     def title(self, title):
         self._title = title
+        pygame.display.set_caption(self.title)
 
     @property
     def screen_size(self):
@@ -45,6 +48,7 @@ class Configuration(object):
     @screen_size.setter
     def screen_size(self, size):
         self._screen_size = size
+        Configuration._instance.set_configuration()
 
     @property
     def mouse_visible(self):
@@ -74,6 +78,7 @@ class Configuration(object):
         else:
             self._surface_flags &= ~pygame.FULLSCREEN | ~pygame.HWSURFACE | ~pygame.DOUBLEBUF
         self._full_screen = full_screen
+        Configuration._instance.set_configuration()
 
     @property
     def surface_flags(self):
@@ -82,6 +87,7 @@ class Configuration(object):
     @surface_flags.setter
     def surface_flags(self, flags):
         self._surface_flags = flags
+        Configuration._instance.set_configuration()
 
     @property
     def collision_check_rate(self):
@@ -94,3 +100,28 @@ class Configuration(object):
     @property
     def length_world_area(self):
         return self._length_world_area
+
+    @property
+    def frame_cap(self):
+        """
+        :return: Frame cap. The frame  cap determines the maximum of cycles that the game perform in one second
+        """
+        return self._frame_cap
+
+    @frame_cap.setter
+    def frame_cap(self, frame_cap):
+        self.frame_cap = frame_cap
+
+    @staticmethod
+    def instance():
+        if Configuration._instance is None:
+            Configuration()
+        return Configuration._instance
+
+    @staticmethod
+    def set_configuration():
+        """
+        Updated screen and stuff based on the current configuration
+        """
+        game.Game.instance().surface = pygame.display.set_mode(Configuration._instance.screen_size,
+                                                               Configuration._instance.surface_flags)

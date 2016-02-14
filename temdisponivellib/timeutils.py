@@ -1,0 +1,43 @@
+from pygame.time import Clock
+from configuration import Configuration
+
+
+class Time(object):
+    """
+    A helper class for dealing with time.
+    """
+    _instance = None
+
+    def __init__(self):
+        if Time._instance is None:
+            Time._instance = self
+        else:
+            pass
+        self._delta_time = 0
+        self._time_scale = 1
+        self._clock = Clock()
+
+    def update(self):
+        self._delta_time = self._clock.tick(Configuration.instance().frame_cap)
+
+    @property
+    def delta_time(self):
+        return self._delta_time / self.time_scale
+
+    @property
+    def time_scale(self):
+        return self._time_scale
+
+    @time_scale.setter
+    def time_scale(self, time_scale):
+        self._time_scale = time_scale
+
+    @property
+    def clock(self):
+        return self._clock
+
+    @staticmethod
+    def instance():
+        if Time._instance is None:
+            Time._instance = Time()
+        return Time._instance

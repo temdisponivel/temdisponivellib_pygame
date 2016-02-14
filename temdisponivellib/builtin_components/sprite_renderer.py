@@ -1,6 +1,6 @@
-from temdisponivellib_pygame.contracts import IDrawable
-from temdisponivellib_pygame.component import Component
-from temdisponivellib_pygame.loader import Loader
+from temdisponivellib.contracts import IDrawable
+from temdisponivellib.component import Component
+from temdisponivellib.loader import Loader
 
 
 class SpriteRenderer(Component, IDrawable):

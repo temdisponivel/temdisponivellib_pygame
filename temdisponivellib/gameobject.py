@@ -1,4 +1,3 @@
-import game
 from pygame import error
 from builtin_components.transform import Transform
 from contracts import *
@@ -87,7 +86,7 @@ class GameObject(IUpdatable):
             self.remove_component(component)
 
     def destroy(self):
-        game.Game.instance.scene.remove_game_object(self)
+        Game.instance().scene.remove_game_object(self)
 
     def _update_component_list(self):
         for component in self._components_remove:
@@ -107,7 +106,7 @@ class GameObject(IUpdatable):
         Raise a exception if the component class is marked as unique and this object already  has a instance
         of the same class
 
-        This method sets the 'game_object' instance of the component to this game object. It algo call the start
+        This method sets the 'game_object' instance of the component to this game object. It also call the start
         method of the component.
         """
         self._components_add.append(component)
@@ -138,7 +137,7 @@ class GameObject(IUpdatable):
             component.load()
 
         if self.started:
-            game.Game.instance.scene.game_object_add_component(self, component)
+            Game.instance().scene.game_object_add_component(self, component)
 
         component.game_object = self
         component.start()
@@ -160,7 +159,7 @@ class GameObject(IUpdatable):
             component.unload()
 
         if self.started:
-            game.Game.instance.scene.game_object_remove_component(self, component)
+            Game.instance().scene.game_object_remove_component(self, component)
 
         component.game_object(None)
         component.finish()

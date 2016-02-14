@@ -109,7 +109,7 @@ class IDrawable(IResource):
         method for the rect representing the area of it.
         :return: Something to drawn into a surface.
         """
-        pass
+        return None
 
     @property
     def get_rect(self):
@@ -117,7 +117,7 @@ class IDrawable(IResource):
         Method that return the rect to use as destination on 'Surface.blit'
         :return: Rect to use as destination in the main surface.
         """
-        return
+        return None
 
     @property
     def is_drawing(self):
@@ -143,7 +143,7 @@ class IDrawable(IResource):
     def layer(self, layer):
         last_layer = self._layer
         self._layer = layer
-        Game.instance.scene.change_layer_or_order(self, last_layer, self.order_in_layer)
+        Game.instance().scene.change_layer_or_order(self, last_layer, self.order_in_layer)
 
     @property
     def order_in_layer(self):
@@ -153,4 +153,4 @@ class IDrawable(IResource):
     def order_in_layer(self, order):
         last_order = self.order_in_layer
         self._order_in_layer = order
-        Game.instance.scene.current.change_layer_or_order(self, self.layer, last_order)
+        Game.instance().scene.current.change_layer_or_order(self, self.layer, last_order)

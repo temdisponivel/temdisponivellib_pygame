@@ -3,6 +3,7 @@ from pygame import mixer
 from pygame import error as err
 import os
 
+
 class Loader(object):
     """
     Helper class to load stuff.
@@ -38,7 +39,7 @@ class Loader(object):
                 full_path = os.path.join(Loader.base_path, path)
             else:
                 full_path = path
-            image = pyimage.load(full_path)
+            image = pyimage.load_basic(full_path)
             image.convert()
             return image, image.get_rect()
         except err, message:

@@ -1,7 +1,6 @@
 from pygame import Rect
-from temdisponivellib_pygame import length_area_world
-from temdisponivellib_pygame.component import Component
-from temdisponivellib_pygame.configuration import Configuration
+from temdisponivellib.component import Component
+from temdisponivellib import length_area_world
 import math
 
 
@@ -156,15 +155,15 @@ class Collider(Component):
 
     @staticmethod
     def _get_areas_of_region(rect):
-        if rect.width < Configuration.instance.lenght_world_area and rect.height < length_area_world:
+        if rect.width < length_area_world and rect.height < length_area_world:
             return [(rect.transform.left % length_area_world, rect.top % length_area_world)]
 
         areas = []
-        if rect.width > Configuration.instance.lenght_world_area:
+        if rect.width > length_area_world:
             for i in range(0, rect.left / length_area_world):
                 areas.append(((rect.left % length_area_world) + i, rect.top % length_area_world))
-        if rect.height > Configuration.instance.lenght_world_area:
-            for i in range(0, rect.top / Configuration.instance.lenght_world_area):
+        if rect.height > length_area_world:
+            for i in range(0, rect.top / length_area_world):
                 areas.append((rect.left % length_area_world,
                               (rect.top % length_area_world) + i))
         return areas

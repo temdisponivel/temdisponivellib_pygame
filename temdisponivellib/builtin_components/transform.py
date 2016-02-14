@@ -1,5 +1,5 @@
-from pygame import Rect
-from temdisponivellib_pygame.component import Component
+from pygame.rect import Rect
+from temdisponivellib.component import Component
 
 
 class Transform(Component, Rect):
@@ -11,4 +11,4 @@ class Transform(Component, Rect):
 
     def __init__(self):
         super(Component, self).__init__()
-        super(Rect, self).__init__()
+        super(Rect, self).__init__((0, 0), (0, 0))

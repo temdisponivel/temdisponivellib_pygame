@@ -10,7 +10,7 @@ from component import *
 from loader import *
 from physics import *
 from scene import *
-from time import *
+from timeutils import *
 from builtin_components import *
 from builtin_components.camera import *
 from builtin_components.collider import *

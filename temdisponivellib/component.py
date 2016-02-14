@@ -1,5 +1,5 @@
 from contracts import IUpdatable
-from temdisponivellib_pygame import callback_functions
+from temdisponivellib import callback_functions
 
 
 class Component(IUpdatable):
