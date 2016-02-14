@@ -1,11 +1,9 @@
 from pygame import *
-from gameobject import IUpdatable
-from temdisponivellib_pygame.time import Time
+from pygame.time import Clock
 from configuration import Configuration
-from physics import Physics
 
 
-class Game(object, IUpdatable):
+class Game(object):
 
     """
     A class that represents a game.
@@ -15,23 +13,22 @@ class Game(object, IUpdatable):
 
     instance = None
 
-    def __init__(self, configuration=Configuration):
+    def __init__(self):
         if Game.instance is None:
             Game.instance = self
         else:
             pass
-        super(IUpdatable, self).__init__()
+        Time()
         self._surface = None
         self._running = False
         self._events = {}
         self._current_scene = None
         self._next_scene = None
-        self._time = Time()
         self._frame_count = 0
 
     def start(self):
         pygame.init()
-        self._update_surface_mode()
+        self.set_configuration()
 
     def finish(self):
         if self._current_scene is not None:
@@ -46,7 +43,7 @@ class Game(object, IUpdatable):
         """
         self._running = True
         while self._running:
-            self._time.update()
+            Time.instance.update()
             self._handle_event()
             # just for safety
             if self._current_scene is not None:
@@ -79,10 +76,18 @@ class Game(object, IUpdatable):
         self.finish()
 
     @property
+    def surface(self):
+        return self._surface
+
+    @surface.setter
+    def surface(self, surface):
+        self._surface = surface
+
+    @property
     def scene(self):
         return self._current_scene
 
-    @property.setter
+    @scene.setter
     def scene(self, scene):
         self._next_scene = scene
 
@@ -94,7 +99,7 @@ class Game(object, IUpdatable):
     def surface(self):
         return self._surface
 
-    @property.setter
+    @surface.setter
     def surface(self, surface):
         self._surface = surface
 
@@ -104,12 +109,12 @@ class Game(object, IUpdatable):
 
     def _handle_event(self):
         self._events.clear()
-        for event in pygame.event.get():
-            if event.type == pygame.event.QUIT:
+        for pyevent in pygame.event.get():
+            if pyevent.type == pygame.event.QUIT:
                 self._running = False
                 self.quit()
             else:
-                self._events[event.type] = event
+                self._events[pyevent.type] = pyevent
 
     def draw_something(self, drawable, position, area):
         """
@@ -118,3 +123,44 @@ class Game(object, IUpdatable):
         :return: None
         """
         self.surface.blit(drawable, position, area)
+
+    def set_configuration(self):
+        """
+        Updated screen and stuff based on the current configuration
+        """
+        self.surface = display.set_mode(Configuration.instance.screen_size, Configuration.instance.surface_flags)
+
+
+class Time(object):
+    """
+    A helper class for dealing with time.
+    """
+    instance = None
+
+    def __init__(self):
+        if Time.instance is None:
+            Time.instance = self
+        else:
+            pass
+        self._delta_time = 0
+        self._time_scale = 1
+        self._clock = Clock()
+
+    def update(self):
+        self._delta_time = self._clock.tick(Configuration.instance.frame_cap)
+
+    @property
+    def delta_time(self):
+        return self._delta_time / self.time_scale
+
+    @property
+    def time_scale(self):
+        return self._time_scale
+
+    @time_scale.setter
+    def time_scale(self, time_scale):
+        self._time_scale = time_scale
+
+    @property
+    def clock(self):
+        return self._clock

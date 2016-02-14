@@ -1,10 +1,11 @@
 from pygame import Rect
-from ..gameobject import Component
-from ..configuration import Configuration
+from temdisponivellib_pygame import length_area_world
+from temdisponivellib_pygame.component import Component
+from temdisponivellib_pygame.configuration import Configuration
 import math
 
 
-class Collider(object, Component):
+class Collider(Component):
     """
     Base class  for all current colliders. This is temporary, the intention is to integrate a Physics engine
     (like Box2D)
@@ -23,13 +24,14 @@ class Collider(object, Component):
         self._width = width
         self._height = height
         self._changed = False
+        self._areas = []
         self._last_values = [0, 0, 0, 0]
 
     def start(self):
-        self._insert_in_area()
+        self._update_areas()
 
     def finish(self):
-        self._remove_from_area()
+        self._remove_from_area(self._areas)
 
     def check_collision(self, other):
         """
@@ -47,7 +49,7 @@ class Collider(object, Component):
     def x(self):
         return self._x
 
-    @property.setter
+    @x.setter
     def x(self, x):
         self._last_values[0] = self.x
         self._changed = True
@@ -57,7 +59,7 @@ class Collider(object, Component):
     def y(self):
         return self._y
 
-    @property.setter
+    @y.setter
     def y(self, y):
         self._last_values[1] = self.y
         self._changed = True
@@ -67,7 +69,7 @@ class Collider(object, Component):
     def width(self):
         return self._width
 
-    @property.setter
+    @width.setter
     def width(self, width):
         self._last_values[2] = self.width
         self._changed = True
@@ -77,7 +79,7 @@ class Collider(object, Component):
     def height(self):
         return self._height
 
-    @property.setter
+    @height.setter
     def height(self, height):
         self._last_values[3] = self.height
         self._changed = True
@@ -102,13 +104,17 @@ class Collider(object, Component):
     def update(self):
         if not self._changed:
             pass
-        last_areas = self._get_areas_of_region(Rect(self._last_values))
+        self._update_areas()
+        self._changed = False
+
+    def _update_areas(self):
+        last_areas = self._areas
         current_areas = self._get_areas_of_region(self)
         to_remove = list(set(last_areas) - set(current_areas))
         to_insert = list(set(current_areas) - set(last_areas))
         self._remove_from_area(to_remove)
         self._insert_in_area(to_insert)
-        self._changed = False
+        self._areas = current_areas
 
     def _insert_in_area(self, areas):
         """
@@ -119,7 +125,7 @@ class Collider(object, Component):
                 continue
             Collider._colliders_by_area.setdefault(area, [])
             if self not in Collider._colliders_by_area[area]:
-                Collider._colliders_by_area[area].insert(self)
+                Collider._colliders_by_area[area].append(self)
 
     def _remove_from_area(self, areas):
         """
@@ -131,6 +137,16 @@ class Collider(object, Component):
             if self in Collider._colliders_by_area[area]:
                 Collider._colliders_by_area[area].remove(self)
 
+    def get_colliders_my_region(self):
+        """
+        :return: List of lists of colliders containing all colliders in the areas of this one. If there is none,
+        returns empty list
+        """
+        colliders = []
+        for area in self._areas:
+            colliders.append(Collider._colliders_by_area[area])
+        return colliders
+
     @property
     def as_rect(self):
         """
@@ -140,20 +156,17 @@ class Collider(object, Component):
 
     @staticmethod
     def _get_areas_of_region(rect):
-        if rect.width < Configuration.instance.lenght_world_area and \
-                            rect.height < Configuration.instance.lenght_world_area:
-            return [(rect.transform.left % Configuration.instance.lenght_world_area,
-                     rect.top % Configuration.instance.lenght_world_area)]
+        if rect.width < Configuration.instance.lenght_world_area and rect.height < length_area_world:
+            return [(rect.transform.left % length_area_world, rect.top % length_area_world)]
 
         areas = []
         if rect.width > Configuration.instance.lenght_world_area:
-            for i in range(0, rect.left / Configuration.instance.lenght_world_area):
-                areas.insert(((rect.left % Configuration.instance.lenght_world_area) + i,
-                              rect.top % Configuration.instance.lenght_world_area))
+            for i in range(0, rect.left / length_area_world):
+                areas.append(((rect.left % length_area_world) + i, rect.top % length_area_world))
         if rect.height > Configuration.instance.lenght_world_area:
             for i in range(0, rect.top / Configuration.instance.lenght_world_area):
-                areas.insert((rect.left % Configuration.instance.lenght_world_area,
-                              (rect.top % Configuration.instance.lenght_world_area) + i))
+                areas.append((rect.left % length_area_world,
+                              (rect.top % length_area_world) + i))
         return areas
 
     @staticmethod
@@ -189,7 +202,7 @@ class Collider(object, Component):
         return colliders
 
 
-class BoxCollider(object, Collider):
+class BoxCollider(Collider):
     """
     A box collider. This validate collision with another box collider or a circle collider.
     The x y of ths collider is on top left corner and will be the top left corner of the transform of the game object.
@@ -199,8 +212,11 @@ class BoxCollider(object, Collider):
 
     def __init__(self, position=(0, 0), size=(0, 0)):
         super(Collider, self).__init__()
-        super(Rect, self).__init__(position, size)
         self._type = Collider.BOX
+        self.x = position[0]
+        self.y = position[1]
+        self.width = size[0]
+        self.height = size[1]
 
     def update(self):
         self.x = self.transform.left
@@ -215,7 +231,7 @@ class BoxCollider(object, Collider):
             return collider.check_collision(self)
 
 
-class CircleCollider(object, Collider):
+class CircleCollider(Collider):
     """
     A circle collider. This validate collision with another circle collider or a box collider.
     The center of this circle collider will be the center of the transform of the game object.
@@ -237,7 +253,7 @@ class CircleCollider(object, Collider):
     def radius(self):
         return self._radius
 
-    @property.setter
+    @radius.setter
     def radius(self, radius):
         self._radius = radius
 
@@ -261,10 +277,10 @@ class CircleCollider(object, Collider):
         if distancey <= (collider.height / 2):
             return True
 
-        corner_distance_sq = math.pow((distancex - collider.width / 2), 2) + \
-                             math.pow((distancey - collider.height / 2), 2)
-
-        return corner_distance_sq <= math.pow(self.radius, 2);
+        real_distancex = distancex - collider.width / 2
+        real_distancey = distancey - collider.height / 2
+        corner_distance_sq = math.pow(real_distancex, 2) + math.pow(real_distancey, 2)
+        return corner_distance_sq <= math.pow(self.radius, 2)
 
     def _collide_with_circle(self, collider):
         distancex = math.fabs(self.x - collider.x)

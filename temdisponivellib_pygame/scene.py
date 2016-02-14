@@ -1,20 +1,20 @@
 from gameobject import GameObject
-from gameobject import IDrawer
-from gameobject import IDrawable
-from gameobject import IResource
+from contracts import *
 from pygame import error as err
 
 
-class Scene(object, GameObject, IDrawer):
+class Scene(GameObject, IDrawer):
     """
     Class that represents a scene in the game.
     It is a game object because it behaves like one, so...
     """
 
     _persistent_game_objects = []
+    _current = None
 
     def __init__(self, background_color, *game_objects):
         super(GameObject, self).__init__()
+        super(IDrawer, self).__init__()
         self._game_objects = {}
         self._game_objects_drawable = {}
         self._game_objects_drawer = []
@@ -29,15 +29,14 @@ class Scene(object, GameObject, IDrawer):
     def start(self):
         for game_object in Scene._persistent_game_objects:
             self.add_game_object(game_object)
-        Scene._persistent_game_objects.clear()
+        Scene._persistent_game_objects = []
 
     def update(self):
         if not self.is_updating:
             pass
         index = 0
-        game_objects = self._layers.values()
         self._update_list_game_object()
-        for game_object in game_objects:
+        for game_object in self._game_objects:
             if not game_object.is_updating:
                 continue
             try:
@@ -50,7 +49,7 @@ class Scene(object, GameObject, IDrawer):
     def finish(self):
         for game_object in self._game_objects:
             if game_object.persistent:
-                Scene._persistent_game_objects.insert(game_object)
+                Scene._persistent_game_objects.append(game_object)
             self.remove_game_object(game_object)
 
     def draw(self):
@@ -73,7 +72,7 @@ class Scene(object, GameObject, IDrawer):
                 self._game_objects_drawable[comp.layer, comp.order_in_layer, game_object.id] = game_object
             if game_object.get_component(IDrawer) is not None:
                 if game_object not in self._game_objects_drawer:
-                    self._game_objects_drawer.insert(game_object)
+                    self._game_objects_drawer.append(game_object)
             game_object.start()
 
         for game_object in self._removed:
@@ -93,8 +92,8 @@ class Scene(object, GameObject, IDrawer):
 
             game_object.finish()
 
-        self._included.clear()
-        self._removed.clear()
+        self._included = []
+        self._removed = []
 
     @property
     def game_objects(self):
@@ -106,7 +105,7 @@ class Scene(object, GameObject, IDrawer):
         :param game_object: Game object to add
         :return: None
         """
-        self._included.insert(game_object)
+        self._included.append(game_object)
 
     def remove_game_object(self, game_object):
         """
@@ -114,7 +113,7 @@ class Scene(object, GameObject, IDrawer):
         :param game_object:
         :return:
         """
-        self._removed.insert(game_object)
+        self._removed.append(game_object)
 
     @property
     def get_drawables(self):
@@ -135,21 +134,12 @@ class Scene(object, GameObject, IDrawer):
                 comp = game_object.get_component(IDrawable)
                 self._game_objects_drawable[comp.layer, comp.order_in_layer] = game_object
 
-    def game_object_moved(self, game_object, last_position):
-        """
-        Callback for when a game object move. Game object must have the values already updated.
-        :param game_object: Game object that move.
-        :param last_position: Last position of the object.
-        :return:
-        """
-        self._replace_game_object_area(game_object, last_position)
-
     def game_object_add_component(self, game_object, component):
         if isinstance(component, IDrawable):
             self._game_objects_drawable[component.layer, component.order_in_layer, game_object.id] = game_object
         if isinstance(component, IDrawer):
             if game_object not in self._game_objects_drawer:
-                self._game_objects_drawer.insert(game_object)
+                self._game_objects_drawer.append(game_object)
 
     def game_object_remove_component(self, game_object, component):
         if isinstance(component, IDrawable):
@@ -158,40 +148,3 @@ class Scene(object, GameObject, IDrawer):
         if isinstance(component, IDrawer):
             if game_object in self._game_objects_drawer:
                 self._game_objects_drawer.remove(game_object)
-
-    #  Waiting to integrate with a physics engine to get object in area of collision
-    #
-    # def get_objects_area(self, rect):
-    #     """
-    #     Return a list with all game object within (or intersecting) the rect
-    #     :param rect: Rect to validate game object in collision.
-    #     :return: List with all matches.
-    #     """
-    #     if ((rect.x + rect.width) % 100, (rect.y + rect.height) % 100) not in self._areas:
-    #         return []
-    #     else:
-    #         return self._areas[(rect.x + rect.width) % 100, (rect.y + rect.height) % 100]
-    #
-    # def _place_game_object_area(self, game_object):
-    #     """
-    #     Update the area of which a game object is placed
-    #     :param game_object: Game object to update the area
-    #     """
-    #     self._areas.setdefault((game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
-    #                 (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100, [])
-    #
-    #     if game_object not in self._areas[(game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
-    #                                   (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100]:
-    #         self._areas[(game_object.tranform.rect.x + game_object.tranform.rect.width) % 100,
-    #                 (game_object.tranform.rect.y + game_object.tranform.rect.height) % 100].insert(game_object)
-    #
-    # def _replace_game_object_area(self, game_object, last_position):
-    #     """
-    #     Update the area of which a game object is placed
-    #     :param game_object: Game object to update the area
-    #     """
-    #     if game_object in self._areas[(last_position.x + last_position.width) % 100,
-    #                                   (last_position.y + last_position.height) % 100]:
-    #         self._areas[(last_position.x + last_position.width) % 100,
-    #                     (last_position.y + last_position.height) % 100].remove(game_object)
-    #     self._place_game_object_area(game_object)

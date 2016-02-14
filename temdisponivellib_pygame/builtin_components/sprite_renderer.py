@@ -1,9 +1,9 @@
-from pygame.sprite import Sprite
-from ..gameobject import IDrawable, Component
-from ..loader import Loader
+from temdisponivellib_pygame.contracts import IDrawable
+from temdisponivellib_pygame.component import Component
+from temdisponivellib_pygame.loader import Loader
 
 
-class SpriteRenderer(object, Component, IDrawable):
+class SpriteRenderer(Component, IDrawable):
     """
     Class that holds a sprite that will be drawn into a surface.
     """
@@ -15,11 +15,12 @@ class SpriteRenderer(object, Component, IDrawable):
         :param path: Path of the sprite. If None or blank, nothing is  loaded.
         :return:
         """
-        super(Sprite, self).__init__()
+        super(Component, self).__init__()
+        super(IDrawable, self).__init__()
         self._image_path = path
         self._image = None
 
-    def get_drawable(self):
+    def drawable(self):
         return self._image
 
     def load(self):
@@ -33,10 +34,11 @@ class SpriteRenderer(object, Component, IDrawable):
     def image(self):
         return self._image
 
-    @property.setter
+    @image.setter
     def image(self, image):
         self._image = image
 
-
-class SpriteRendererAnimaton(object, Component):
-    pass
+    def get_rect(self):
+        if self._image is None:
+            return self.transform
+        return self._image.get_rect(topleft=(self.transform.x, self.transform.y))

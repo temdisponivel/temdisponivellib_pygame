@@ -7,12 +7,12 @@ from gameobject import IUpdatable
 from gameobject import IDrawable
 from game import Game
 from configuration import Configuration
-from gameobject import Component
+from component import Component
 from pygame.surface import Surface
 from pygame import draw
 
 
-class Physics(object, IUpdatable, IDrawable):
+class Physics(IUpdatable, IDrawable):
 
     """
     Class that handles some physics functions.
@@ -21,6 +21,8 @@ class Physics(object, IUpdatable, IDrawable):
     instance = None
 
     def __init__(self):
+        super(IUpdatable, self).__init__()
+        super(IDrawable, self).__init__()
         if Physics.instance is None:
             Physics.instance = self
         else:
@@ -50,8 +52,8 @@ class Physics(object, IUpdatable, IDrawable):
         """
         colliders = Collider.get_colliders()
         for list_colliders in colliders:
-            length = 0
-            for i in range(length=len(list_colliders)):
+            length = len(list_colliders)
+            for i in range(length):
                 if i >= length:
                     break
                 collider_a = list_colliders[i]
@@ -73,9 +75,10 @@ class Physics(object, IUpdatable, IDrawable):
                     elif key_b in self._active_collisions:
                         callback = "collision_exit"
                         del self._active_collisions[key_b]
-                self._call_callback(callback, collider_a, collider_b)
+                if callback is None:
+                    self._call_callback(callback, collider_a, collider_b)
 
-    def _call_callback(self, callback, collider_a, collider_b, key):
+    def _call_callback(self, callback, collider_a, collider_b):
         for cls in Component.get_class_by_callback(callback):
             comp_a = collider_a.get_component(cls)
             comp_b = collider_b.get_component(cls)
@@ -98,7 +101,7 @@ class Physics(object, IUpdatable, IDrawable):
     def draw_colliders(self):
         return self._draw_colliders
 
-    @property.setter
+    @draw_colliders.setter
     def draw_colliders(self, draw):
         self._draw_colliders = draw
 
@@ -106,7 +109,7 @@ class Physics(object, IUpdatable, IDrawable):
     def debug_color(self):
         return self._debug_color
 
-    @property.setter
+    @debug_color.setter
     def debug_color(self, color):
         self._debug_color = color
 

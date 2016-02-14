@@ -1,11 +1,11 @@
 from pygame import Rect
-from ..game import Game
-from ..gameobject import IDrawer
-from ..gameobject import IDrawable
-from ..gameobject import Component
+from temdisponivellib_pygame.game import Game
+from temdisponivellib_pygame.contracts import IDrawer
+from temdisponivellib_pygame.contracts import IDrawable
+from temdisponivellib_pygame.component import Component
 
 
-class Camera(object, Component, Rect, IDrawer):
+class Camera(Component, IDrawer):
     """
     Class that represents a camera in game. This class is a initial simple camera. In future, hopefully,
     this will have lots of more features.
@@ -15,18 +15,26 @@ class Camera(object, Component, Rect, IDrawer):
     by changing its size and position.
     """
 
-    def __init__(self, position=(0, 0), size=(Game.instance.screen_size.width, Game.instance.screen_size.height)):
+    def __init__(self, size=(0, 0)):
         super(Component, self).__init__()
-        super(Rect, self).__init__(position, size)
         super(IDrawer, self).__init__()
+        self._rect = Rect()
+        self._rect.size(size)
 
     def in_sight(self, game_object):
+
         """
-        Validate if a game object (or anything that have a Rect) is visible by this camera.
-        :param object: Object (as a Rect) to validate visibility
+        Validate if a game object is visible by this camera.
+        :param game_object: Game object to validate if it is on sight
         :return: True if it is visible. False otherwise.
         """
-        return game_object.get_component(IDrawable) is not None and self.colliderect(game_object.get_drawable.get_rect)
+
+        return game_object.get_component(IDrawable) is not None and self.transform.collidedict(
+            game_object.get_component(IDrawable).get_rect)
+
+    def update(self):
+        self._rect.x = self.transform.x
+        self._rect.y = self.transform.y
 
     def draw(self):
         """
@@ -36,31 +44,28 @@ class Camera(object, Component, Rect, IDrawer):
         for game_object in game_objects_drawable:
             self.draw_game_object(game_object, True)
 
-        # Waiting to integrate with a physics engine to get object in area of collision and draw only them
-        #
-        # game_objects_area = Game.instance.scene.get_objects_area(self)
-        # game_objects_drawable = Game.instance.scene.get_drawables
-        #
-        # for game_object_a, game_object_d in zip(game_objects_area, game_objects_drawable):
-        #     try:
-        #         self.draw_game_object(game_object_d, False)
-        #     except err, message:
-        #         print err, message
-        #         raise err
-        #
-
     def draw_game_object(self, game_object, validate_in_camera=True):
         """
         Draw a game object using this camera.
         :param game_object: Game object to be draw.
         :param validate_in_camera: If true, only draws the object if 'in_sight' is True.
         """
-        if validate_in_camera and self.in_sight(game_object) and game_object.is_drawing:
-            drawable = game_object.get_drawable
-            Game.instance.surface.blit(game_object.get_drawable, game_object.rect, game_object.rect.clip(self))
+        if not validate_in_camera and self.in_sight(game_object) and game_object.get_component(IDrawable).is_drawing:
+            pass
+        Game.instance.surface.blit(game_object.get_component(IDrawable).drawable,
+                                   game_object.get_component(IDrawable).get_rect,
+                                   game_object.get_component(IDrawable).get_rect.clip(self._rect))
+
+    @property
+    def size(self):
+        return self._rect.size
+
+    @size.setter
+    def size(self, size):
+        self._rect = size
 
     def full_surface(self):
-        self.width = Game.instance.screen_size.width
-        self.height = Game.instance.screen_size.height
-        self.top = 0
-        self.left = 0
+        self.transform.x = 0
+        self.transform.y = 0
+        self.transform.width = Game.instance.screen_size.width
+        self.transform.height = Game.instance.screen_size.height
