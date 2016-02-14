@@ -8,6 +8,8 @@ from gameobject import IDrawable
 from game import Game
 from configuration import Configuration
 from gameobject import Component
+from pygame.surface import Surface
+from pygame import draw
 
 
 class Physics(object, IUpdatable, IDrawable):
@@ -25,6 +27,7 @@ class Physics(object, IUpdatable, IDrawable):
             pass
         self._draw_colliders = False
         self._active_collisions = {}
+        self._debug_color = (1, 0, 0)
 
     def update(self):
         if Game.instance.frame_count % Configuration.instance.collision_check_rate == 0:
@@ -34,8 +37,11 @@ class Physics(object, IUpdatable, IDrawable):
         if not self.draw_colliders:
             pass
         colliders = Collider.get_colliders()
-        for game_objects in colliders:
-            pass
+        for collider in colliders:
+            if collider.collider_type == Collider.BOX:
+                draw.rect(Game.instance.surface, self._debug_color, collider.as_rect, 5)
+            else:
+                draw.circle(Game.instance.surface, self._debug_color, (collider.x, collider.y), collider.radius, 5)
 
     def check_collision(self):
         """
@@ -95,6 +101,14 @@ class Physics(object, IUpdatable, IDrawable):
     @property.setter
     def draw_colliders(self, draw):
         self._draw_colliders = draw
+
+    @property
+    def debug_color(self):
+        return self._debug_color
+
+    @property.setter
+    def debug_color(self, color):
+        self._debug_color = color
 
     @property
     def active_collision(self):

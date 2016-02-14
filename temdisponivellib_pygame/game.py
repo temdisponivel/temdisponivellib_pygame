@@ -110,3 +110,11 @@ class Game(object, IUpdatable):
                 self.quit()
             else:
                 self._events[event.type] = event
+
+    def draw_something(self, drawable, position, area):
+        """
+        Draw shomething in screen. This function must be called inside "draw" lifecycle hook
+        :param drawable: Something to draw
+        :return: None
+        """
+        self.surface.blit(drawable, position, area)

@@ -131,6 +131,13 @@ class Collider(object, Component):
             if self in Collider._colliders_by_area[area]:
                 Collider._colliders_by_area[area].remove(self)
 
+    @property
+    def as_rect(self):
+        """
+        :return: This collider as a rect
+        """
+        return Rect(self.x, self.y, self.width, self.height)
+
     @staticmethod
     def _get_areas_of_region(rect):
         if rect.width < Configuration.instance.lenght_world_area and \
