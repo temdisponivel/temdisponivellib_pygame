@@ -17,10 +17,11 @@ class Configuration(object):
                  frame_cap=0,
                  mouse_visible=False,
                  collision_check_rate=3):
+        super(Configuration, self).__init__()
         if Configuration._instance is None:
             Configuration._instance = self
         else:
-            pass
+            return
         self._screen_size = screen_size
         self._title = title
         self._frame_cap = frame_cap

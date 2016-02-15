@@ -3,7 +3,6 @@ from temdisponivellib import callback_functions
 
 
 class Component(IUpdatable):
-
     """
     Represents a component that can be attached to a game object and be part of its lifecycle.
     """

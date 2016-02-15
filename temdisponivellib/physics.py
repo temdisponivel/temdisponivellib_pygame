@@ -16,10 +16,11 @@ class Physics(object):
     _instance = None
 
     def __init__(self):
+        super(Physics, self).__init__()
         if Physics._instance is None:
             Physics._instance = self
         else:
-            pass
+            return
         self._active_collisions = {}
         self._frame_count = 0
 
@@ -33,16 +34,12 @@ class Physics(object):
         Collides all colliders that ara in same region
         :return:
         """
-        print "COLLING"
-        print "---------------------------------------------------------------------------"
         colliders = Collider.get_colliders()
         for list_colliders in colliders:
-            print "COLLING ANOTHER AREA"
-            print "---------------------------------------------------------------------------"
             length = len(list_colliders)
             for i in range(length):
                 for j in range(i + 1, length):
-                    if j == length - 1:
+                    if j == length:
                         break
                     collider_a = list_colliders[i]
                     collider_b = list_colliders[j]

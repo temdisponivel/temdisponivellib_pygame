@@ -1,3 +1,5 @@
+#  TODO: validate cropped rect for bliting area when object has y or x negatives
+
 from pygame import Rect
 from temdisponivellib.game import Game
 from temdisponivellib.configuration import Configuration
@@ -18,8 +20,8 @@ class Camera(Component, IDrawer):
 
     def __init__(self, size=(0, 0)):
         super(Camera, self).__init__()
-        self._rect = Rect()
-        self._rect.size(size)
+        self._rect = Rect((0, 0), size)
+        self._rect.size = size
 
     def in_sight(self, game_object):
 
@@ -29,7 +31,7 @@ class Camera(Component, IDrawer):
         :return: True if it is visible. False otherwise.
         """
 
-        return game_object.get_component(IDrawable) is not None and self.transform.collidedict(
+        return game_object.get_component(IDrawable) is not None and self._rect.collidedict(
             game_object.get_component(IDrawable).get_rect)
 
     def update(self):
@@ -51,10 +53,13 @@ class Camera(Component, IDrawer):
         :param validate_in_camera: If true, only draws the object if 'in_sight' is True.
         """
         if not validate_in_camera and self.in_sight(game_object) and game_object.get_component(IDrawable).is_drawing:
-            pass
-        Game.instance().surface.blit(game_object.get_component(IDrawable).drawable,
-                                     game_object.get_component(IDrawable).get_rect,
-                                     game_object.get_component(IDrawable).get_rect.clip(self._rect))
+            return
+        position = (game_object.transform.x, game_object.transform.y)
+        component = game_object.get_component(IDrawable)
+        clipped = component.drawable.get_rect(topleft=position).clip(self._rect)
+        Game.instance().surface.blit(component.drawable,
+                                     position,
+                                     (0, 0, clipped.width, clipped.height))
 
     @property
     def size(self):
@@ -67,5 +72,5 @@ class Camera(Component, IDrawer):
     def full_surface(self):
         self.transform.x = 0
         self.transform.y = 0
-        self.transform.width = Configuration.instance().screen_size.width
-        self.transform.height = Configuration.instance().screen_size.height
+        self._rect.width = Configuration.instance().screen_size.width
+        self._rect.height = Configuration.instance().screen_size.height

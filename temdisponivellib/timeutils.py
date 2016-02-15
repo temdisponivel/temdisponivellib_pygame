@@ -12,7 +12,7 @@ class Time(object):
         if Time._instance is None:
             Time._instance = self
         else:
-            pass
+            return
         self._delta_time = 0
         self._time_scale = 1
         self._clock = Clock()

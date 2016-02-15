@@ -15,10 +15,11 @@ class Game(object):
     _instance = None
 
     def __init__(self):
+        super(Game, self).__init__()
         if Game._instance is None:
             Game._instance = self
         else:
-            pass
+            return
         self._surface = None
         self._running = False
         self._events = {}

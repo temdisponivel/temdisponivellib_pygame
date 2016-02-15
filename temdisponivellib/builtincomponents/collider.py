@@ -52,7 +52,7 @@ class Collider(Component):
     @x.setter
     def x(self, x):
         if self.x == x:
-            pass
+            return
         self._last_values[0] = self.x
         self._changed = True
         self._x = x
@@ -64,7 +64,7 @@ class Collider(Component):
     @y.setter
     def y(self, y):
         if self.y == y:
-            pass
+            return
         self._last_values[1] = self.y
         self._changed = True
         self._y = y
@@ -76,7 +76,7 @@ class Collider(Component):
     @width.setter
     def width(self, width):
         if self.width == width:
-            pass
+            return
         self._last_values[2] = self.width
         self._changed = True
         self._width = width
@@ -88,7 +88,7 @@ class Collider(Component):
     @height.setter
     def height(self, height):
         if self.height == height:
-            pass
+            return
         self._last_values[3] = self.height
         self._changed = True
         self._height = height
@@ -111,7 +111,7 @@ class Collider(Component):
 
     def update(self):
         if not self._changed:
-            pass
+            return
         self._update_areas()
         self._changed = False
 
@@ -232,8 +232,8 @@ class BoxCollider(Collider):
         self.height = size[1]
 
     def update(self):
-        self.x = self.transform.left
-        self.y = self.transform.top
+        self.x = self.transform.x
+        self.y = self.transform.y
         super(BoxCollider, self).update()
 
     def check_collision(self, collider):
@@ -247,7 +247,7 @@ class BoxCollider(Collider):
 class CircleCollider(Collider):
     """
     A circle collider. This validate collision with another circle collider or a box collider.
-    The center of this circle collider will be the center of the transform of the game object.
+    The center of this circle collider will be the x y of the transform of the game object.
     Note that, as this collider is temporary, the collision with the box only occurs if the box is axis-aligned
     to the circle
     """
@@ -257,7 +257,7 @@ class CircleCollider(Collider):
         self._radius = radius
 
     def update(self):
-        self.x, self.y = self.transform.centerx, self.transform.centery
+        self.x, self.y = self.transform.x, self.transform.y
         super(CircleCollider, self).update()
 
     @property

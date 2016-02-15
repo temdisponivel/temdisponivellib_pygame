@@ -1,9 +1,12 @@
-from gameobject import GameObject
+#  TODO: remove hard coded types from what we consider drawable and drawer
+#  TODO: implement sorted drawables by layer
+
 from contracts import *
 import errorutils
 from physics import Physics
 
-class Scene(GameObject, IDrawer):
+
+class Scene(IUpdatable, IDrawer):
     """
     Class that represents a scene in the game.
     It is a game object because it behaves like one, so...
@@ -30,7 +33,7 @@ class Scene(GameObject, IDrawer):
     def update(self):
         Physics.instance().update()
         if not self.is_updating:
-            pass
+            return
         index = 0
         self._update_list_game_object()
         for game_object in self._game_objects.values():
@@ -51,17 +54,22 @@ class Scene(GameObject, IDrawer):
 
     def draw(self):
         if not self.is_drawing:
-            pass
+            return
         for drawer in self._game_objects_drawer:
-            if not drawer.is_drawing:
+            if not drawer.get_component(IDrawer).is_drawing:
                 continue
             try:
-                drawer.draw()
+                drawer.get_component(IDrawer).draw()
             except:
                 errorutils.handle_exception()
 
     def _update_list_game_object(self):
         for game_object in self._included:
+            try:
+                game_object.start()
+            except:
+                errorutils.handle_exception()
+
             self._game_objects[game_object.id] = game_object
             if game_object.get_component(IDrawable) is not None:
                 comp = game_object.get_component(IDrawable)
@@ -69,14 +77,10 @@ class Scene(GameObject, IDrawer):
             if game_object.get_component(IDrawer) is not None:
                 if game_object not in self._game_objects_drawer:
                     self._game_objects_drawer.append(game_object)
-            try:
-                game_object.start()
-            except:
-                errorutils.handle_exception()
 
         for game_object in self._removed:
             if game_object.id not in self._game_objects:
-                pass
+                continue
 
             del self._game_objects[game_object.id]
 
@@ -88,6 +92,7 @@ class Scene(GameObject, IDrawer):
             if game_object.get_component(IDrawer) is not None:
                 if game_object in self._game_objects_drawer:
                     self._game_objects_drawer.remove(game_object)
+
             try:
                 game_object.finish()
             except:
@@ -124,7 +129,7 @@ class Scene(GameObject, IDrawer):
         """
         :return: A list with all drawables in this scene.
         """
-        return sorted(self._game_objects_drawable).values()
+        return self._game_objects_drawable.values()
 
     @property
     def background_color(self):

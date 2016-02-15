@@ -7,6 +7,7 @@ class IResource(object):
     """
 
     def __init__(self):
+        super(IResource, self).__init__()
         pass
 
     def load(self):
@@ -28,6 +29,7 @@ class IUpdatable(object):
     """
 
     def __init__(self):
+        super(IUpdatable, self).__init__()
         self._is_updating = True
 
     def start(self):
@@ -63,6 +65,7 @@ class IDrawer(object):
     """
 
     def __init__(self):
+        super(IDrawer, self).__init__()
         self._is_drawing = True
 
     def draw(self):
@@ -105,17 +108,9 @@ class IDrawable(IResource):
     @property
     def drawable(self):
         """
-        This method must return something that can be drawn into a surface. This object must have a 'get_rect'
+        This method must return something that can be drawn into a surface.
         method for the rect representing the area of it.
         :return: Something to drawn into a surface.
-        """
-        return None
-
-    @property
-    def get_rect(self):
-        """
-        Method that return the rect to use as destination on 'Surface.blit'
-        :return: Rect to use as destination in the main surface.
         """
         return None
 

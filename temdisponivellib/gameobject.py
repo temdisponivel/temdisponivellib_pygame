@@ -1,3 +1,5 @@
+#  TODO: remove hard coded types from what we consider drawable and drawer
+
 from builtincomponents.transform import Transform
 from contracts import *
 import errorutils
@@ -29,7 +31,6 @@ class GameObject(IUpdatable):
         self._components = {}
         self._components_remove = []
         self._components_add = []
-        self.is_drawing = False
         self._started = False
         self._persistent = False
         self._add_component(Transform())
@@ -72,16 +73,6 @@ class GameObject(IUpdatable):
     def transform(self):
         return self.get_component(Transform)
 
-    def update(self):
-        if not self.is_updating:
-            pass
-        for component in self._components.values():
-            try:
-                component.update()
-            except:
-                errorutils.handle_exception()
-        self._update_component_list()
-
     def start(self):
         GameObject._started_game_object_by_tag.setdefault(self.tag, [])
         GameObject._started_game_object_by_name.setdefault(self.name, [])
@@ -90,6 +81,16 @@ class GameObject(IUpdatable):
         GameObject._started_game_object_by_id[self._id] = self
         self._update_component_list()
         self._started = True
+
+    def update(self):
+        if not self.is_updating:
+            return
+        for component in self._components.values():
+            try:
+                component.update()
+            except:
+                errorutils.handle_exception()
+        self._update_component_list()
 
     def finish(self):
         if self.tag in GameObject._started_game_object_by_tag:
@@ -144,6 +145,8 @@ class GameObject(IUpdatable):
                 raise Exception("Try to add a duplicate component marked as unique. " + str(component.__class__))
             if isinstance(component, IDrawable):
                 self._components[IDrawable] = component
+            elif isinstance(component, IDrawer):
+                self._components[IDrawer] = component
             else:
                 self._components[component.__class__] = component
         else:
@@ -157,7 +160,7 @@ class GameObject(IUpdatable):
             except:
                 errorutils.handle_exception()
 
-        if self.started:
+        if self._started:
             Game.instance().scene.game_object_add_component(self, component)
 
         component.game_object = self
@@ -168,7 +171,7 @@ class GameObject(IUpdatable):
 
     def _remove_component(self, component):
         if component.__class__ not in self._components:
-            pass
+            return
 
         if type(self._components[component.__class__]) is list:
             if component in self._components[component.__class__]:
@@ -176,6 +179,8 @@ class GameObject(IUpdatable):
         else:
             if isinstance(component, IDrawable):
                 self._components[IDrawable] = None
+            elif isinstance(component, IDrawer):
+               self._components[IDrawer] = None
             else:
                 del self._components[component.__class__]
 
@@ -185,7 +190,7 @@ class GameObject(IUpdatable):
             except:
                 errorutils.handle_exception()
 
-        if self.started:
+        if self._started:
             Game.instance().scene.game_object_remove_component(self, component)
 
         component.game_object = None
