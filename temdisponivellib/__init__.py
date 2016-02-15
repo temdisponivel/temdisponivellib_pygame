@@ -1,5 +1,6 @@
 callback_functions = ["collision_enter", "collision_stay", "collision_exit"]
-length_area_world = 100
+length_area_world = 75
+raise_exception = False
 
 #  import all required modules
 from game import *
@@ -11,8 +12,8 @@ from loader import *
 from physics import *
 from scene import *
 from timeutils import *
-from builtin_components import *
-from builtin_components.camera import *
-from builtin_components.collider import *
-from builtin_components.sprite_renderer import *
-from builtin_components.transform import *
+from builtincomponents import *
+from builtincomponents.camera import *
+from builtincomponents.collider import *
+from builtincomponents.sprite_renderer import *
+from builtincomponents.transform import *

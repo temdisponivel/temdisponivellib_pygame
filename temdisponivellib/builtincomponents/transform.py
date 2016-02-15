@@ -10,5 +10,4 @@ class Transform(Component, Rect):
     """
 
     def __init__(self):
-        super(Component, self).__init__()
-        super(Rect, self).__init__((0, 0), (0, 0))
+        super(Transform, self).__init__()

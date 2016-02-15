@@ -1,5 +1,7 @@
 from timeutils import Time
+from configuration import Configuration
 import pygame
+import errorutils
 
 
 class Game(object):
@@ -22,15 +24,21 @@ class Game(object):
         self._events = {}
         self._current_scene = None
         self._next_scene = None
-        self._frame_count = 0
 
     def start(self):
-        pygame.init()
+        try:
+            pygame.init()
+            self.set_configuration()
+        except:
+            errorutils.handle_exception()
 
     def finish(self):
-        if self._current_scene is not None:
-            self._current_scene.finish()
-        pygame.quit()
+        try:
+            if self._current_scene is not None:
+                self._current_scene.finish()
+            pygame.quit()
+        except:
+            errorutils.handle_exception()
 
     def play(self):
         """
@@ -40,29 +48,29 @@ class Game(object):
         """
         self._running = True
         while self._running:
-            Time.instance().update()
-            self._handle_event()
-            # just for safety
-            if self._current_scene is not None:
-                try:
-                    self._current_scene.update()
-                    self.surface.fill(self.scene.background_color)
-                    self._current_scene.draw()
+            try:
+                Time.instance().update()
+                self._handle_event()
+                # just for safety
+                if self.scene is not None:
+                    self.scene.update()
+                    self.scene.draw()
                     pygame.display.flip()
-                except pygame.error, message:
-                    print pygame.error, message
-            if self._next_scene is not None:
-                try:
-                    self._current_scene.finish()
-                except pygame.error, message:
-                    print pygame.error, message
-                try:
+                    self.surface.fill(self.scene.background_color)
+
+                if self._next_scene is not None:
+                    if self.scene is not None:
+                        self.scene.finish()
                     self._next_scene.start()
-                except pygame.error, message:
-                    print pygame.error, message
-                self._current_scene = self._next_scene
-                self._next_scene = None
-            self._frame_count += 1
+                    self._current_scene = self._next_scene
+                    self._next_scene = None
+            except:
+                errorutils.handle_exception()
+        try:
+            self.quit()
+        except:
+            errorutils.handle_exception()
+
 
     def quit(self):
         """
@@ -82,14 +90,26 @@ class Game(object):
 
     @property
     def scene(self):
+        """
+        :return: Returns the current scene
+        """
         return self._current_scene
 
     @scene.setter
     def scene(self, scene):
+        """
+        Set the next scene.
+        :param scene: Scene to set.
+        :return: None
+        """
         self._next_scene = scene
 
     @property
     def events(self):
+        """
+        :return: A dictionary where the key is the type of the event and value is a list with all events
+        of that type that occurs in this frame.
+        """
         return self._events
 
     @property
@@ -100,18 +120,14 @@ class Game(object):
     def surface(self, surface):
         self._surface = surface
 
-    @property
-    def frame_count(self):
-        return self._frame_count
-
     def _handle_event(self):
         self._events.clear()
         for pyevent in pygame.event.get():
-            if pyevent.type == pygame.event.QUIT:
+            if pyevent.type == pygame.QUIT:
                 self._running = False
-                self.quit()
             else:
-                self._events[pyevent.type] = pyevent
+                self._events.setdefault(pyevent.type, [])
+                self._events[pyevent.type].append(pyevent)
 
     def draw_something(self, drawable, position, area):
         """
@@ -126,3 +142,10 @@ class Game(object):
         if Game._instance is None:
             Game()
         return Game._instance
+
+    def set_configuration(self):
+        """
+        Updated screen and stuff based on the current configuration
+        """
+        self.surface = pygame.display.set_mode(Configuration.instance().screen_size,
+                                                               Configuration.instance().surface_flags)

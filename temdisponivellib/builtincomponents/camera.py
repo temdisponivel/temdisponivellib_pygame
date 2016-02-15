@@ -17,8 +17,7 @@ class Camera(Component, IDrawer):
     """
 
     def __init__(self, size=(0, 0)):
-        super(Component, self).__init__()
-        super(IDrawer, self).__init__()
+        super(Camera, self).__init__()
         self._rect = Rect()
         self._rect.size(size)
 

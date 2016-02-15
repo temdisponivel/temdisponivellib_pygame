@@ -96,7 +96,7 @@ class IDrawable(IResource):
     _order_in_layer = 0
 
     def __init__(self):
-        super(IResource, self).__init__()
+        super(IDrawable, self).__init__()
         self._is_drawing = True
         self._layer = 0
         self._order_in_layer = IDrawable._order_in_layer + 1

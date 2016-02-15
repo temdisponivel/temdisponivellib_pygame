@@ -16,7 +16,7 @@ class Collider(Component):
     _colliders_by_area = {}
 
     def __init__(self, x=0, y=0, width=0, height=0):
-        super(Component, self).__init__()
+        super(Collider, self).__init__()
         self._type = None
         self._x = x
         self._y = y
@@ -27,7 +27,8 @@ class Collider(Component):
         self._last_values = [0, 0, 0, 0]
 
     def start(self):
-        self._update_areas()
+        #self._update_areas()
+        pass
 
     def finish(self):
         self._remove_from_area(self._areas)
@@ -50,6 +51,8 @@ class Collider(Component):
 
     @x.setter
     def x(self, x):
+        if self.x == x:
+            pass
         self._last_values[0] = self.x
         self._changed = True
         self._x = x
@@ -60,6 +63,8 @@ class Collider(Component):
 
     @y.setter
     def y(self, y):
+        if self.y == y:
+            pass
         self._last_values[1] = self.y
         self._changed = True
         self._y = y
@@ -70,6 +75,8 @@ class Collider(Component):
 
     @width.setter
     def width(self, width):
+        if self.width == width:
+            pass
         self._last_values[2] = self.width
         self._changed = True
         self._width = width
@@ -80,6 +87,8 @@ class Collider(Component):
 
     @height.setter
     def height(self, height):
+        if self.height == height:
+            pass
         self._last_values[3] = self.height
         self._changed = True
         self._height = height
@@ -108,7 +117,7 @@ class Collider(Component):
 
     def _update_areas(self):
         last_areas = self._areas
-        current_areas = self._get_areas_of_region(self)
+        current_areas = self._get_areas_of_region(self.as_rect)
         to_remove = list(set(last_areas) - set(current_areas))
         to_insert = list(set(current_areas) - set(last_areas))
         self._remove_from_area(to_remove)
@@ -120,8 +129,6 @@ class Collider(Component):
         Insert this collider into the list of colliders by area
         """
         for area in areas:
-            if area not in Collider._get_areas_of_region:
-                continue
             Collider._colliders_by_area.setdefault(area, [])
             if self not in Collider._colliders_by_area[area]:
                 Collider._colliders_by_area[area].append(self)
@@ -131,8 +138,6 @@ class Collider(Component):
         Remove this collider from the list of colliders by area
         """
         for area in areas:
-            if area not in Collider._get_areas_of_region:
-                continue
             if self in Collider._colliders_by_area[area]:
                 Collider._colliders_by_area[area].remove(self)
 
@@ -155,17 +160,28 @@ class Collider(Component):
 
     @staticmethod
     def _get_areas_of_region(rect):
-        if rect.width < length_area_world and rect.height < length_area_world:
-            return [(rect.transform.left % length_area_world, rect.top % length_area_world)]
-
         areas = []
-        if rect.width > length_area_world:
-            for i in range(0, rect.left / length_area_world):
-                areas.append(((rect.left % length_area_world) + i, rect.top % length_area_world))
-        if rect.height > length_area_world:
-            for i in range(0, rect.top / length_area_world):
-                areas.append((rect.left % length_area_world,
-                              (rect.top % length_area_world) + i))
+
+        #  here we get the number of areas that our height and width can occupy
+        size_x = (rect.width / length_area_world) + 1
+        size_y = (rect.height / length_area_world) + 1
+
+        #  check to see if our right border is in the next area
+        # this check is necessary because we can have a object that is in the middle of a area
+        # and its end is in another area, so we need to add one in the size
+        if rect.x + rect.width >= length_area_world * ((rect.x / length_area_world) + 1):
+            size_x += 1
+
+        #  same as x axis
+        if rect.y + rect.height >= length_area_world * ((rect.y / length_area_world) + 1):
+            size_y += 1
+
+        for i in range(0, size_x):
+            for j in range(0, size_y):
+                x = (rect.x / length_area_world) + i
+                y = (rect.y / length_area_world) + j
+                areas.append((x, y))
+
         return areas
 
     @staticmethod
@@ -209,18 +225,16 @@ class BoxCollider(Collider):
     to the circle.
     """
 
-    def __init__(self, position=(0, 0), size=(0, 0)):
-        super(Collider, self).__init__()
+    def __init__(self, size=(0, 0)):
+        super(BoxCollider, self).__init__()
         self._type = Collider.BOX
-        self.x = position[0]
-        self.y = position[1]
         self.width = size[0]
         self.height = size[1]
 
     def update(self):
         self.x = self.transform.left
         self.y = self.transform.top
-        super(Collider, self).update()
+        super(BoxCollider, self).update()
 
     def check_collision(self, collider):
         if collider.collider_type == Collider.BOX:
@@ -238,15 +252,13 @@ class CircleCollider(Collider):
     to the circle
     """
 
-    def __init__(self, radius, center=(0, 0)):
-        super(Collider, self).__init__()
+    def __init__(self, radius):
+        super(CircleCollider, self).__init__()
         self._radius = radius
-        self.x = center[0]
-        self.y = center[1]
 
     def update(self):
         self.x, self.y = self.transform.centerx, self.transform.centery
-        super(Collider, self).update()
+        super(CircleCollider, self).update()
 
     @property
     def radius(self):

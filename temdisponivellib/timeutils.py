@@ -18,7 +18,7 @@ class Time(object):
         self._clock = Clock()
 
     def update(self):
-        self._delta_time = self._clock.tick(Configuration.instance().frame_cap)
+        self._delta_time = self._clock.tick(Configuration.instance().frame_cap )
 
     @property
     def delta_time(self):
@@ -35,6 +35,13 @@ class Time(object):
     @property
     def clock(self):
         return self._clock
+
+    @property
+    def frame_rate(self):
+        """
+        :return: The frame rate which the game is current running.
+        """
+        return self._clock.get_fps()
 
     @staticmethod
     def instance():

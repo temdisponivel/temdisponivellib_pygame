@@ -1,6 +1,6 @@
-from pygame import error
-from builtin_components.transform import Transform
+from builtincomponents.transform import Transform
 from contracts import *
+import errorutils
 
 
 class GameObject(IUpdatable):
@@ -20,11 +20,11 @@ class GameObject(IUpdatable):
     _started_game_object_by_id = {}
     _started_game_object_by_name = {}
 
-    def __init__(self, name="GameObject", tag="Tag"):
-        super(IUpdatable, self).__init__()
+    def __init__(self):
+        super(GameObject, self).__init__()
         self._id = GameObject._id + 1
-        self._tag = tag
-        self._name = name
+        self._tag = self.__class__
+        self._name = "GameObject " + str(self._id)
         GameObject._id += 1
         self._components = {}
         self._components_remove = []
@@ -32,7 +32,7 @@ class GameObject(IUpdatable):
         self.is_drawing = False
         self._started = False
         self._persistent = False
-        self.add_component(Transform())
+        self._add_component(Transform())
 
     @property
     def id(self):
@@ -42,9 +42,27 @@ class GameObject(IUpdatable):
     def tag(self):
         return self._tag
 
+    @tag.setter
+    def tag(self, tag):
+        if self._tag in self._started_game_object_by_tag:
+            self._started_game_object_by_tag[self._tag].remove(self)
+        self._tag = tag
+        if self._tag in self._started_game_object_by_tag:
+            self._started_game_object_by_tag.setdefault(self._tag, [])
+        self._started_game_object_by_tag[self._tag].append(self)
+
     @property
     def name(self):
         return self._name
+
+    @name.setter
+    def name(self, name):
+        if self._name in self._started_game_object_by_name:
+            self._started_game_object_by_name[self._name].remove(self)
+        self._name = name
+        if self._name in self._started_game_object_by_name:
+            self._started_game_object_by_name.setdefault(self._name, [])
+        self._started_game_object_by_name[self._name].append(self)
 
     @property
     def started(self):
@@ -57,8 +75,11 @@ class GameObject(IUpdatable):
     def update(self):
         if not self.is_updating:
             pass
-        for component in self._components:
-            component.update()
+        for component in self._components.values():
+            try:
+                component.update()
+            except:
+                errorutils.handle_exception()
         self._update_component_list()
 
     def start(self):
@@ -84,6 +105,7 @@ class GameObject(IUpdatable):
 
         for component in self._components.values():
             self.remove_component(component)
+        self._update_component_list()
 
     def destroy(self):
         Game.instance().scene.remove_game_object(self)
@@ -100,12 +122,8 @@ class GameObject(IUpdatable):
 
     def add_component(self, component):
         """
-        Adds a component to this game object. From now on, this component will be update or draw (or both, depending
-        on the flags of the component)
+        Adds a component to this game object. From now on, this component will be update or draw (or both)
         within the lifecycle of this game object
-        Raise a exception if the component class is marked as unique and this object already  has a instance
-        of the same class
-
         This method sets the 'game_object' instance of the component to this game object. It also call the start
         method of the component.
         """
@@ -123,7 +141,7 @@ class GameObject(IUpdatable):
     def _add_component(self, component):
         if component.is_unique:
             if component.__class__ in self._components:
-                raise error("Try to add a duplicate component marked as unique.")
+                raise Exception("Try to add a duplicate component marked as unique. " + str(component.__class__))
             if isinstance(component, IDrawable):
                 self._components[IDrawable] = component
             else:
@@ -134,13 +152,19 @@ class GameObject(IUpdatable):
                 self._components[component.__class__].append(component)
 
         if isinstance(component, IResource):
-            component.load()
+            try:
+                component.load()
+            except:
+                errorutils.handle_exception()
 
         if self.started:
             Game.instance().scene.game_object_add_component(self, component)
 
         component.game_object = self
-        component.start()
+        try:
+            component.start()
+        except:
+                errorutils.handle_exception()
 
     def _remove_component(self, component):
         if component.__class__ not in self._components:
@@ -150,26 +174,32 @@ class GameObject(IUpdatable):
             if component in self._components[component.__class__]:
                 self._components[component.__class__].remove(component)
         else:
-            if isinstance(IDrawable, component):
+            if isinstance(component, IDrawable):
                 self._components[IDrawable] = None
             else:
                 del self._components[component.__class__]
 
         if isinstance(component, IResource):
-            component.unload()
+            try:
+                component.unload()
+            except:
+                errorutils.handle_exception()
 
         if self.started:
             Game.instance().scene.game_object_remove_component(self, component)
 
-        component.game_object(None)
-        component.finish()
+        component.game_object = None
+        try:
+            component.finish()
+        except:
+                errorutils.handle_exception()
 
     def get_component(self, key):
         """
         Return only one component of a given type.
         If this game object has more than one, it will return the first
         """
-        if type not in self._components:
+        if key not in self._components:
             return None
         if type(self._components[key]) is list:
             return self._components[key][0]
@@ -181,7 +211,7 @@ class GameObject(IUpdatable):
         Return a list of components of a given type.
         If this game object has just one, it will return a list with just one
         """
-        if type not in self._components:
+        if key not in self._components:
             return None
         if type(self._components[key]) is list:
             return self._components[key]

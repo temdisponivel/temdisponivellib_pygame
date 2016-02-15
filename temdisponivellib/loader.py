@@ -1,6 +1,6 @@
 from pygame import image as pyimage
 from pygame import mixer
-from pygame import error as err
+import traceback
 import os
 
 
@@ -19,11 +19,7 @@ class Loader(object):
         :param path: Path of the sound.
         :return: A sound.
         """
-        try:
-            sound = mixer.Sound(path)
-        except err, message:
-            print err, message
-            raise err
+        sound = mixer.Sound(path)
         return sound
 
     @staticmethod
@@ -34,14 +30,10 @@ class Loader(object):
         :param path: Name of the image.
         :return: A tuple containing a image and the rect of it.
         """
-        try:
-            if Loader.concat_base_path and concat:
-                full_path = os.path.join(Loader.base_path, path)
-            else:
-                full_path = path
-            image = pyimage.load_basic(full_path)
-            image.convert()
-            return image, image.get_rect()
-        except err, message:
-            print err, message
-            raise err
+        if Loader.concat_base_path and concat:
+            full_path = os.path.join(Loader.base_path, path)
+        else:
+            full_path = path
+        image = pyimage.load_basic(full_path)
+        image.convert()
+        return image, image.get_rect()

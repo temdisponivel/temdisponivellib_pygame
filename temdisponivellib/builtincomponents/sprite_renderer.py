@@ -15,8 +15,7 @@ class SpriteRenderer(Component, IDrawable):
         :param path: Path of the sprite. If None or blank, nothing is  loaded.
         :return:
         """
-        super(Component, self).__init__()
-        super(IDrawable, self).__init__()
+        super(SpriteRenderer, self).__init__()
         self._image_path = path
         self._image = None
 

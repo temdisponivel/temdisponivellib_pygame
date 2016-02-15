@@ -1,7 +1,7 @@
 from gameobject import GameObject
 from contracts import *
-from pygame import error as err
-
+import errorutils
+from physics import Physics
 
 class Scene(GameObject, IDrawer):
     """
@@ -12,45 +12,42 @@ class Scene(GameObject, IDrawer):
     _persistent_game_objects = []
     _current = None
 
-    def __init__(self, background_color, *game_objects):
-        super(GameObject, self).__init__()
-        super(IDrawer, self).__init__()
+    def __init__(self):
+        super(Scene, self).__init__()
         self._game_objects = {}
         self._game_objects_drawable = {}
         self._game_objects_drawer = []
-        self._cameras = {}
-        self._areas = {}
         self._included = []
         self._removed = []
-        self._background_color = background_color
-        for game_object in game_objects:
-            self.add_game_object(game_object)
+        self._background_color = (0, 0, 0, 0)
 
     def start(self):
         for game_object in Scene._persistent_game_objects:
             self.add_game_object(game_object)
         Scene._persistent_game_objects = []
+        self._update_list_game_object()
 
     def update(self):
+        Physics.instance().update()
         if not self.is_updating:
             pass
         index = 0
         self._update_list_game_object()
-        for game_object in self._game_objects:
+        for game_object in self._game_objects.values():
             if not game_object.is_updating:
                 continue
             try:
                 game_object.update()
-                index += 1
-            except err, message:
-                print err, message
-                raise err
+            except:
+                errorutils.handle_exception()
+            index += 1
 
     def finish(self):
-        for game_object in self._game_objects:
+        for game_object in self._game_objects.values():
             if game_object.persistent:
                 Scene._persistent_game_objects.append(game_object)
             self.remove_game_object(game_object)
+        self._update_list_game_object()
 
     def draw(self):
         if not self.is_drawing:
@@ -60,9 +57,8 @@ class Scene(GameObject, IDrawer):
                 continue
             try:
                 drawer.draw()
-            except err, message:
-                print err, message
-                raise err
+            except:
+                errorutils.handle_exception()
 
     def _update_list_game_object(self):
         for game_object in self._included:
@@ -73,7 +69,10 @@ class Scene(GameObject, IDrawer):
             if game_object.get_component(IDrawer) is not None:
                 if game_object not in self._game_objects_drawer:
                     self._game_objects_drawer.append(game_object)
-            game_object.start()
+            try:
+                game_object.start()
+            except:
+                errorutils.handle_exception()
 
         for game_object in self._removed:
             if game_object.id not in self._game_objects:
@@ -89,14 +88,19 @@ class Scene(GameObject, IDrawer):
             if game_object.get_component(IDrawer) is not None:
                 if game_object in self._game_objects_drawer:
                     self._game_objects_drawer.remove(game_object)
-
-            game_object.finish()
+            try:
+                game_object.finish()
+            except:
+                errorutils.handle_exception()
 
         self._included = []
         self._removed = []
 
     @property
     def game_objects(self):
+        """
+        :return: Dictionary containing all game objects (key: game_object.id, value: game_object)
+        """
         return self._game_objects
 
     def add_game_object(self, game_object):
@@ -121,6 +125,10 @@ class Scene(GameObject, IDrawer):
         :return: A list with all drawables in this scene.
         """
         return sorted(self._game_objects_drawable).values()
+
+    @property
+    def background_color(self):
+        return self._background_color
 
     def change_layer_or_order(self, game_object, last_layer, last_order):
         """

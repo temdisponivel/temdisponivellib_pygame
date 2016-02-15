@@ -12,7 +12,7 @@ class Component(IUpdatable):
     _validated_classes = []
 
     def __init__(self):
-        super(IUpdatable, self).__init__()
+        super(Component, self).__init__()
         self._game_object = None
         if self.__class__ not in Component._validated_classes:
             Component._validated_classes.append(self.__class__)
@@ -73,7 +73,7 @@ class Component(IUpdatable):
         :param callback_name: Name of the callback to look for classes that have it
         :return: List of all classes that have this callback
         """
-        if callback_name in Component._class_by_callback_function:
+        if callback_name not in Component._class_by_callback_function:
             return []
         else:
             return Component._class_by_callback_function[callback_name]
