@@ -14,7 +14,7 @@ class Configuration(object):
                  full_screen=False,
                  surface_flags=0,
                  title="Game",
-                 frame_cap=0,
+                 frame_cap=300,
                  mouse_visible=False,
                  collision_check_rate=3):
         super(Configuration, self).__init__()

@@ -1,4 +1,6 @@
-#  TODO: validate cropped rect for bliting area when object has y or x negatives
+# TODO: validate cropped rect for bliting area when object has y or x negatives
+#  TODO: implement a view port position to make possible to look at some point in game and show in some
+#  another point on screen
 
 from pygame import Rect
 from temdisponivellib.game import Game

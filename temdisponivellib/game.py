@@ -149,4 +149,5 @@ class Game(object):
         Updated screen and stuff based on the current configuration
         """
         self.surface = pygame.display.set_mode(Configuration.instance().screen_size,
-                                                               Configuration.instance().surface_flags)
+                                               Configuration.instance().surface_flags)
+        pygame.display.set_caption(Configuration.instance().title)

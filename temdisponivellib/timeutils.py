@@ -1,3 +1,5 @@
+#  TODO: make all methods static
+
 from pygame.time import Clock
 from configuration import Configuration
 
@@ -13,16 +15,16 @@ class Time(object):
             Time._instance = self
         else:
             return
-        self._delta_time = 0
-        self._time_scale = 1
+        self._delta_time = 0.0
+        self._time_scale = 1.0
         self._clock = Clock()
 
     def update(self):
-        self._delta_time = self._clock.tick(Configuration.instance().frame_cap )
+        self._delta_time = self._clock.tick(Configuration.instance().frame_cap) / 1000.0
 
     @property
     def delta_time(self):
-        return self._delta_time / self.time_scale
+        return self._delta_time
 
     @property
     def time_scale(self):

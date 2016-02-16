@@ -1,32 +1,10 @@
-from pygame.rect import Rect
+#  TODO: make the transform have a vec2d, not be one. Also make some properties like forward and such
+
 from temdisponivellib.component import Component
+from temdisponivellib.mathutils import *
 
 
-class Point(object):
-
-    def __init__(self):
-        super(Point, self).__init__()
-        self._x = 0
-        self._y = 0
-
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self,  x):
-        self._x =  x
-
-    @property
-    def y(self):
-        return self._y
-
-    @y.setter
-    def y(self, y):
-        self._y = y
-
-
-class Transform(Point, Component):
+class Transform(Vec2d, Component):
 
     """
     Component that every game object has. It contains the position of the game object and some useful

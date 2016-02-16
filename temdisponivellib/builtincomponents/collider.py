@@ -156,7 +156,7 @@ class Collider(Component):
         """
         :return: This collider as a rect
         """
-        return Rect(self.x, self.y, self.width, self.height)
+        return Rect((self.x, self.y, self.width, self.height))
 
     @staticmethod
     def _get_areas_of_region(rect):
