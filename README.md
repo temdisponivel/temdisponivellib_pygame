@@ -5,3 +5,5 @@ The principal idea is to make game objects that can have multiples components at
 Some components are ready, like two types of colliders (just temporary, because, hopefully, i`ll integrate Box2D soon), a sprite renderer, camera and transform. All very basic yet.
 There no good release yet. In development.
 Wanna help? Just let me know.
+
+See <a href=https://github.com/temdisponivel/serialcommunicator/blob/master/LICENSE>LICENSE</a> for information about MIT License.
