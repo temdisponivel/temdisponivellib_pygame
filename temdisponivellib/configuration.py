@@ -93,7 +93,7 @@ class Configuration(object):
 
     @frame_cap.setter
     def frame_cap(self, frame_cap):
-        self.frame_cap = frame_cap
+        self._frame_cap = frame_cap
 
     @staticmethod
     def instance():

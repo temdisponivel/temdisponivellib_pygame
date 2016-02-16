@@ -1,5 +1,3 @@
-#  TODO: make all methods static
-
 from pygame.time import Clock
 from configuration import Configuration
 
@@ -24,7 +22,7 @@ class Time(object):
 
     @property
     def delta_time(self):
-        return self._delta_time
+        return self._delta_time / self._time_scale
 
     @property
     def time_scale(self):
