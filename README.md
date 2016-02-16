@@ -6,4 +6,4 @@ Some components are ready, like two types of colliders (just temporary, because,
 There no good release yet. In development.
 Wanna help? Just let me know.
 
-See <a href=https://github.com/temdisponivel/serialcommunicator/blob/master/LICENSE>LICENSE</a> for information about MIT License.
+See <a href=https://github.com/temdisponivel/temdisponivellib_pygame/blob/master/LICENSE>LICENSE</a> for information about MIT License.
